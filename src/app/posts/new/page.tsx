@@ -21,7 +21,7 @@ export default async function NewPostPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
       <h1 className="text-2xl font-semibold">New post</h1>
-      <PostForm pets={pets} />
+      <PostForm ownerId={user.id} pets={pets} />
     </main>
   );
 }
