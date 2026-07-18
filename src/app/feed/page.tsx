@@ -30,17 +30,7 @@ export default async function FeedPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Feed</h1>
-        <div className="flex gap-2">
-          <Link href="/explore" className="rounded border px-3 py-2 text-sm">
-            Explore
-          </Link>
-          <Link href="/posts/new" className="rounded bg-black px-3 py-2 text-sm text-white">
-            New post
-          </Link>
-        </div>
-      </div>
+      <h1 className="text-2xl font-semibold">Feed</h1>
 
       {isEmptyFollowingFeed && (
         <p className="text-gray-500">

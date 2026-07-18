@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { logout } from "@/app/actions/auth";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -17,9 +16,7 @@ export default async function Home() {
     : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 p-6 text-center">
-      <h1 className="text-3xl font-semibold">PetSocial</h1>
-
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-xl flex-col items-center justify-center gap-6 p-6 text-center">
       {owner ? (
         <>
           <p>
@@ -38,29 +35,23 @@ export default async function Home() {
             ))}
           </div>
 
-          <div className="flex gap-4">
-            <Link href="/feed" className="rounded border px-4 py-2">
-              Feed
-            </Link>
-            <Link href="/pets/new" className="rounded bg-black px-4 py-2 text-white">
-              Add a pet
-            </Link>
-            <form action={logout}>
-              <button type="submit" className="rounded border px-4 py-2">
-                Log out
-              </button>
-            </form>
-          </div>
+          <Link href="/pets/new" className="rounded bg-black px-4 py-2 text-white">
+            Add a pet
+          </Link>
         </>
       ) : (
-        <div className="flex gap-4">
-          <Link href="/login" className="rounded border px-4 py-2">
-            Log in
-          </Link>
-          <Link href="/signup" className="rounded bg-black px-4 py-2 text-white">
-            Sign up
-          </Link>
-        </div>
+        <>
+          <h1 className="text-3xl font-semibold">PetSocial</h1>
+          <p className="text-gray-500">A social network for pets and their people.</p>
+          <div className="flex gap-4">
+            <Link href="/login" className="rounded border px-4 py-2">
+              Log in
+            </Link>
+            <Link href="/signup" className="rounded bg-black px-4 py-2 text-white">
+              Sign up
+            </Link>
+          </div>
+        </>
       )}
     </main>
   );
