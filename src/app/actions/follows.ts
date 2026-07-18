@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { notify, actorLabel } from "@/lib/notify";
 
 export async function toggleFollow(targetOwnerId: string) {
   const supabase = await createClient();
@@ -27,6 +28,8 @@ export async function toggleFollow(targetOwnerId: string) {
     await prisma.follow.delete({ where: { id: existing.id } });
   } else {
     await prisma.follow.create({ data: { followerId: user.id, followingId: targetOwnerId } });
+    const label = await actorLabel(user.id);
+    await notify(targetOwnerId, "follow", `${label} started following you.`);
   }
 
   const target = await prisma.owner.findUnique({ where: { id: targetOwnerId } });

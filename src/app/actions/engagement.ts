@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { notify, actorLabel } from "@/lib/notify";
 
 export async function toggleLike(postId: string) {
   const supabase = await createClient();
@@ -23,6 +24,12 @@ export async function toggleLike(postId: string) {
     await prisma.like.delete({ where: { id: existing.id } });
   } else {
     await prisma.like.create({ data: { postId, ownerId: user.id } });
+
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (post && post.ownerId !== user.id) {
+      const label = await actorLabel(user.id);
+      await notify(post.ownerId, "like", `${label} liked your post.`);
+    }
   }
 
   revalidatePath(`/posts/${postId}`);
@@ -47,6 +54,12 @@ export async function addComment(postId: string, formData: FormData) {
   await prisma.comment.create({
     data: { postId, ownerId: user.id, body },
   });
+
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (post && post.ownerId !== user.id) {
+    const label = await actorLabel(user.id);
+    await notify(post.ownerId, "comment", `${label} commented on your post.`);
+  }
 
   revalidatePath(`/posts/${postId}`);
 }
