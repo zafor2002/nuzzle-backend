@@ -40,7 +40,7 @@ export default async function PostDetailPage({
   const liked = user ? post.likes.some((l) => l.ownerId === user.id) : false;
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-57px)] max-w-lg flex-col gap-4 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-lg flex-col gap-4 p-6">
       <Link href="/feed" className="text-sm text-muted hover:text-primary">
         &larr; Back to feed
       </Link>

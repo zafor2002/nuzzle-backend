@@ -36,7 +36,7 @@ export default async function PetProfilePage({
     : [];
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-57px)] max-w-lg flex-col gap-4 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-lg flex-col gap-4 p-6">
       <Link href="/" className="text-sm text-muted hover:text-primary">
         &larr; Back
       </Link>

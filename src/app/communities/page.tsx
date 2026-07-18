@@ -11,7 +11,7 @@ export default async function CommunitiesPage() {
   });
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-57px)] max-w-lg flex-col gap-6 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-lg flex-col gap-6 p-6">
       <h1 className="text-2xl font-semibold">Communities</h1>
 
       {groups.length === 0 && <EmptyState>No communities yet.</EmptyState>}

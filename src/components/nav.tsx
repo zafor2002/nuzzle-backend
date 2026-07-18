@@ -21,65 +21,61 @@ export async function Nav() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
-      <nav className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-3">
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="shrink-0 text-lg font-semibold text-primary">
           🐾 PetSocial
         </Link>
 
         {owner ? (
-          <div className="flex min-w-0 items-center gap-1">
-            <div className="flex items-center gap-1 overflow-x-auto text-sm whitespace-nowrap">
-              <Link href="/feed" className="rounded-md px-2 py-1.5 hover:bg-muted-bg">
-                Feed
-              </Link>
-              <Link href="/explore" className="rounded-md px-2 py-1.5 hover:bg-muted-bg">
-                Explore
-              </Link>
-              <Link href="/communities" className="rounded-md px-2 py-1.5 hover:bg-muted-bg">
-                Communities
-              </Link>
-              <Link href="/lost-found" className="rounded-md px-2 py-1.5 hover:bg-muted-bg">
-                Lost & Found
-              </Link>
-              <Link href="/notifications" className="relative rounded-md px-2 py-1.5 hover:bg-muted-bg">
-                Alerts
-                {unreadCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium text-white">
-                    {unreadCount}
-                  </span>
-                )}
-              </Link>
-            </div>
-
-            <Link href="/posts/new" className="shrink-0">
-              <Button className="ml-1">New post</Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link href="/posts/new">
+              <Button className="px-3 py-1.5 text-sm">New post</Button>
             </Link>
-
-            <Link
-              href={`/owners/${owner.username}`}
-              className="ml-1 shrink-0"
-              title={owner.displayName}
-            >
+            <Link href={`/owners/${owner.username}`} title={owner.displayName}>
               <Avatar name={owner.displayName} size="sm" />
             </Link>
-
-            <form action={logout} className="shrink-0">
-              <button type="submit" className="px-2 text-sm text-muted hover:text-foreground">
+            <form action={logout}>
+              <button type="submit" className="text-sm text-muted hover:text-foreground">
                 Log out
               </button>
             </form>
           </div>
         ) : (
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex shrink-0 items-center gap-3 text-sm">
             <Link href="/login" className="text-muted hover:text-foreground">
               Log in
             </Link>
             <Link href="/signup">
-              <Button>Sign up</Button>
+              <Button className="px-3 py-1.5 text-sm">Sign up</Button>
             </Link>
           </div>
         )}
-      </nav>
+      </div>
+
+      {owner && (
+        <nav className="mx-auto flex max-w-2xl gap-1 overflow-x-auto px-4 pb-2 text-sm whitespace-nowrap">
+          <Link href="/feed" className="shrink-0 rounded-md px-2 py-1 hover:bg-muted-bg">
+            Feed
+          </Link>
+          <Link href="/explore" className="shrink-0 rounded-md px-2 py-1 hover:bg-muted-bg">
+            Explore
+          </Link>
+          <Link href="/communities" className="shrink-0 rounded-md px-2 py-1 hover:bg-muted-bg">
+            Communities
+          </Link>
+          <Link href="/lost-found" className="shrink-0 rounded-md px-2 py-1 hover:bg-muted-bg">
+            Lost & Found
+          </Link>
+          <Link href="/notifications" className="relative shrink-0 rounded-md px-2 py-1 hover:bg-muted-bg">
+            Alerts
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium text-white">
+                {unreadCount}
+              </span>
+            )}
+          </Link>
+        </nav>
+      )}
     </header>
   );
 }
