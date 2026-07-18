@@ -35,7 +35,16 @@ export default async function PetProfilePage({
       {pet.bio && <p>{pet.bio}</p>}
 
       <p className="text-sm text-gray-500">
-        {ownerIsHidden ? "Managed by an anonymous owner" : `Owned by ${pet.owner.displayName}`}
+        {ownerIsHidden ? (
+          "Managed by an anonymous owner"
+        ) : (
+          <>
+            Owned by{" "}
+            <Link href={`/owners/${pet.owner.username}`} className="underline">
+              {pet.owner.displayName}
+            </Link>
+          </>
+        )}
       </p>
     </main>
   );
