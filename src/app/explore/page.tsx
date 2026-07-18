@@ -30,7 +30,7 @@ export default async function ExplorePage() {
     : new Set<string>();
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-lg flex-col gap-4 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-57px)] max-w-lg flex-col gap-4 p-6">
       <h1 className="text-2xl font-semibold">Explore</h1>
 
       {owners.length === 0 && <EmptyState>No one to follow yet.</EmptyState>}

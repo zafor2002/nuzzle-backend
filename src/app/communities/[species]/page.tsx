@@ -41,7 +41,7 @@ export default async function CommunityPage({
   });
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-lg flex-col gap-6 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-57px)] max-w-lg flex-col gap-6 p-6">
       <Link href="/communities" className="text-sm text-muted hover:text-primary">
         &larr; All communities
       </Link>

@@ -30,7 +30,7 @@ export default async function NotificationsPage() {
   const hasUnread = notifications.some((n) => !n.isRead);
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-lg flex-col gap-6 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-57px)] max-w-lg flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Notifications</h1>
         {hasUnread && (

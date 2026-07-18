@@ -14,7 +14,7 @@ export default async function NewPetPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 p-6">
       <h1 className="text-2xl font-semibold">Add a pet</h1>
       <Card>
         <PetForm />

@@ -16,7 +16,7 @@ export default function SignupPage() {
   }, initialState);
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 p-6">
       <div className="text-center">
         <h1 className="text-2xl font-semibold">🐾 Join PetSocial</h1>
         <p className="mt-1 text-sm text-muted">Create an account for you and your pets</p>
