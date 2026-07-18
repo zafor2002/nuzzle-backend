@@ -1,0 +1,184 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Owner {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  displayName   String
+  avatarUrl     String?
+  bio           String?
+  isAnonymous   Boolean  @default(false) // hides owner identity across the whole app
+  isPrivate     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pets          Pet[]
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+  following     Follow[]  @relation("OwnerFollowing")
+  followers     Follow[]  @relation("OwnerFollowers")
+  sentMessages  Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+  notifications Notification[]
+  lostFoundPosts LostFoundPost[]
+}
+
+model Pet {
+  id           String   @id @default(cuid())
+  ownerId      String
+  owner        Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name         String
+  species      String
+  breed        String?
+  bio          String?
+  birthDate    DateTime?
+  avatarUrl    String?
+  isAnonymous  Boolean  @default(false) // overrides owner visibility for this pet only
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  posts        Post[]
+  healthLogs   HealthLog[]
+  lostFoundPosts LostFoundPost[]
+
+  @@index([ownerId])
+}
+
+model Post {
+  id         String   @id @default(cuid())
+  ownerId    String
+  owner      Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  petId      String?
+  pet        Pet?     @relation(fields: [petId], references: [id], onDelete: SetNull)
+  caption    String?
+  mediaUrls  String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  comments   Comment[]
+  likes      Like[]
+  hashtags   HashtagsOnPosts[]
+
+  @@index([ownerId])
+  @@index([petId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, ownerId])
+  @@index([postId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    Owner    @relation("OwnerFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   Owner    @relation("OwnerFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model Hashtag {
+  id    String @id @default(cuid())
+  tag   String @unique
+  posts HashtagsOnPosts[]
+}
+
+model HashtagsOnPosts {
+  postId    String
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtagId String
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, hashtagId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     Owner    @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   Owner    @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  body       String
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  type      String   // e.g. "like", "comment", "follow", "lost_pet_nearby"
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+model HealthLog {
+  id          String   @id @default(cuid())
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  type        String   // e.g. "vaccination", "vet_visit", "medication"
+  title       String
+  notes       String?
+  date        DateTime
+  reminderAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([petId])
+}
+
+model LostFoundPost {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  petId       String?
+  pet         Pet?     @relation(fields: [petId], references: [id], onDelete: SetNull)
+  status      String   @default("lost") // "lost" | "found"
+  description String
+  lastSeenLat Float?
+  lastSeenLng Float?
+  contactInfo String?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([ownerId])
+  @@index([petId])
+}
