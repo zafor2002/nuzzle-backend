@@ -6,7 +6,7 @@ export default async function FeedPage() {
   const posts = await prisma.post.findMany({
     orderBy: { createdAt: "desc" },
     take: 50,
-    include: { owner: true, pet: true },
+    include: { owner: true, pet: true, _count: { select: { likes: true, comments: true } } },
   });
 
   return (
@@ -53,6 +53,10 @@ export default async function FeedPage() {
                   className="w-full rounded object-cover"
                 />
               )}
+
+              <Link href={`/posts/${post.id}`} className="text-sm text-gray-500 underline">
+                {post._count.likes} likes · {post._count.comments} comments
+              </Link>
             </article>
           );
         })}
