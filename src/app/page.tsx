@@ -39,6 +39,9 @@ export default async function Home() {
           </div>
 
           <div className="flex gap-4">
+            <Link href="/feed" className="rounded border px-4 py-2">
+              Feed
+            </Link>
             <Link href="/pets/new" className="rounded bg-black px-4 py-2 text-white">
               Add a pet
             </Link>
