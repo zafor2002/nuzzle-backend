@@ -24,6 +24,7 @@ export async function Nav() {
           <div className="flex items-center gap-4 text-sm">
             <Link href="/feed">Feed</Link>
             <Link href="/explore">Explore</Link>
+            <Link href="/lost-found">Lost & Found</Link>
             <Link href="/posts/new">New post</Link>
             <Link href={`/owners/${owner.username}`}>Profile</Link>
             <form action={logout}>

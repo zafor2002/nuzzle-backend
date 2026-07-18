@@ -1,0 +1,27 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { LostFoundForm } from "./lost-found-form";
+
+export default async function NewLostFoundPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const pets = await prisma.pet.findMany({
+    where: { ownerId: user.id },
+    select: { id: true, name: true },
+  });
+
+  return (
+    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
+      <h1 className="text-2xl font-semibold">Report a lost or found pet</h1>
+      <LostFoundForm pets={pets} />
+    </main>
+  );
+}
