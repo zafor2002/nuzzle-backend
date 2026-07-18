@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Owner {
-  id            String   @id @default(cuid())
+  id            String   @id // matches Supabase auth.users.id
   email         String   @unique
   username      String   @unique
   displayName   String
