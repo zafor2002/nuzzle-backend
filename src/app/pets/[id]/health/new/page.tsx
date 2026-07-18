@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { Card } from "@/components/ui/card";
 import { HealthForm } from "./health-form";
 
 export default async function NewHealthLogPage({
@@ -28,9 +29,11 @@ export default async function NewHealthLogPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 p-6">
       <h1 className="text-2xl font-semibold">Add a health log for {pet.name}</h1>
-      <HealthForm petId={pet.id} />
+      <Card>
+        <HealthForm petId={pet.id} />
+      </Card>
     </main>
   );
 }

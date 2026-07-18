@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { Card } from "@/components/ui/card";
 import { LostFoundForm } from "./lost-found-form";
 
 export default async function NewLostFoundPage() {
@@ -19,9 +20,11 @@ export default async function NewLostFoundPage() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 p-6">
       <h1 className="text-2xl font-semibold">Report a lost or found pet</h1>
-      <LostFoundForm pets={pets} />
+      <Card>
+        <LostFoundForm pets={pets} />
+      </Card>
     </main>
   );
 }

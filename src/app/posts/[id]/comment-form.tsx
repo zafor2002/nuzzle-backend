@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import { addComment } from "@/app/actions/engagement";
+import { Textarea } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const initialState = { error: "" };
 
@@ -13,21 +15,11 @@ export function CommentForm({ postId }: { postId: string }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-2">
-      <textarea
-        name="body"
-        placeholder="Add a comment..."
-        rows={2}
-        required
-        className="rounded border px-3 py-2 text-sm"
-      />
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded bg-black px-3 py-1 text-sm text-white disabled:opacity-50"
-      >
+      <Textarea name="body" placeholder="Add a comment..." rows={2} required className="text-sm" />
+      {state.error && <p className="text-sm text-danger">{state.error}</p>}
+      <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Posting..." : "Comment"}
-      </button>
+      </Button>
     </form>
   );
 }

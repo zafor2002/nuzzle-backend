@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -16,42 +20,55 @@ export default async function Home() {
     : null;
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-xl flex-col items-center justify-center gap-6 p-6 text-center">
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-xl flex-col gap-6 p-6">
       {owner ? (
         <>
-          <p>
-            Welcome back, <span className="font-medium">{owner.displayName}</span> (@{owner.username})
-          </p>
-
-          <div className="flex w-full flex-col gap-2">
-            {owner.pets.map((pet) => (
-              <Link
-                key={pet.id}
-                href={`/pets/${pet.id}`}
-                className="rounded border px-4 py-2 text-left"
-              >
-                {pet.name} <span className="text-sm text-gray-500">({pet.species})</span>
-              </Link>
-            ))}
+          <div className="flex items-center gap-3">
+            <Avatar name={owner.displayName} size="lg" />
+            <div>
+              <p className="text-lg font-semibold">{owner.displayName}</p>
+              <p className="text-sm text-muted">@{owner.username}</p>
+            </div>
           </div>
 
-          <Link href="/pets/new" className="rounded bg-black px-4 py-2 text-white">
-            Add a pet
-          </Link>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <h2 className="font-medium">Your pets</h2>
+              <Link href="/pets/new">
+                <Button variant="secondary">Add a pet</Button>
+              </Link>
+            </div>
+
+            {owner.pets.length === 0 ? (
+              <EmptyState>You haven&apos;t added a pet yet.</EmptyState>
+            ) : (
+              owner.pets.map((pet) => (
+                <Link key={pet.id} href={`/pets/${pet.id}`}>
+                  <Card className="flex items-center gap-3 transition-colors hover:bg-muted-bg">
+                    <Avatar name={pet.name} size="md" />
+                    <div>
+                      <p className="font-medium">{pet.name}</p>
+                      <p className="text-sm text-muted">{pet.species}</p>
+                    </div>
+                  </Card>
+                </Link>
+              ))
+            )}
+          </div>
         </>
       ) : (
-        <>
-          <h1 className="text-3xl font-semibold">PetSocial</h1>
-          <p className="text-gray-500">A social network for pets and their people.</p>
-          <div className="flex gap-4">
-            <Link href="/login" className="rounded border px-4 py-2">
-              Log in
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+          <h1 className="text-3xl font-semibold">🐾 PetSocial</h1>
+          <p className="text-muted">A social network for pets and their people.</p>
+          <div className="flex gap-3">
+            <Link href="/login">
+              <Button variant="secondary">Log in</Button>
             </Link>
-            <Link href="/signup" className="rounded bg-black px-4 py-2 text-white">
-              Sign up
+            <Link href="/signup">
+              <Button>Sign up</Button>
             </Link>
           </div>
-        </>
+        </div>
       )}
     </main>
   );

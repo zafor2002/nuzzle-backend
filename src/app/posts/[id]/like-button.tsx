@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { toggleLike } from "@/app/actions/engagement";
+import { Button } from "@/components/ui/button";
 
 export function LikeButton({
   postId,
@@ -15,15 +16,14 @@ export function LikeButton({
   const [pending, startTransition] = useTransition();
 
   return (
-    <button
+    <Button
       type="button"
+      variant={liked ? "primary" : "secondary"}
       disabled={pending}
       onClick={() => startTransition(() => toggleLike(postId))}
-      className={`rounded border px-3 py-1 text-sm disabled:opacity-50 ${
-        liked ? "bg-black text-white" : ""
-      }`}
+      className="self-start"
     >
-      {liked ? "Liked" : "Like"} ({likeCount})
-    </button>
+      {liked ? "❤️ Liked" : "🤍 Like"} ({likeCount})
+    </Button>
   );
 }

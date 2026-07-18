@@ -2,6 +2,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { markAllRead } from "@/app/actions/notifications";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+
+const ICONS: Record<string, string> = {
+  like: "❤️",
+  comment: "💬",
+  follow: "👤",
+};
 
 export default async function NotificationsPage() {
   const supabase = await createClient();
@@ -22,28 +30,31 @@ export default async function NotificationsPage() {
   const hasUnread = notifications.some((n) => !n.isRead);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 p-6">
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-lg flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Notifications</h1>
         {hasUnread && (
           <form action={markAllRead}>
-            <button type="submit" className="rounded border px-3 py-1.5 text-sm">
+            <Button type="submit" variant="secondary">
               Mark all read
-            </button>
+            </Button>
           </form>
         )}
       </div>
 
-      {notifications.length === 0 && <p className="text-gray-500">No notifications yet.</p>}
+      {notifications.length === 0 && <EmptyState>No notifications yet.</EmptyState>}
 
       <div className="flex flex-col gap-2">
         {notifications.map((n) => (
           <div
             key={n.id}
-            className={`rounded border px-4 py-3 text-sm ${n.isRead ? "" : "bg-gray-50 dark:bg-gray-900"}`}
+            className={`flex items-start gap-3 rounded-md border border-border px-4 py-3 text-sm ${n.isRead ? "" : "bg-muted-bg"}`}
           >
-            <p>{n.message}</p>
-            <p className="mt-1 text-xs text-gray-400">{new Date(n.createdAt).toLocaleString()}</p>
+            <span>{ICONS[n.type] ?? "🔔"}</span>
+            <div>
+              <p>{n.message}</p>
+              <p className="mt-1 text-xs text-muted">{new Date(n.createdAt).toLocaleString()}</p>
+            </div>
           </div>
         ))}
       </div>

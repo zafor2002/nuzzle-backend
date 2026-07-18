@@ -3,6 +3,9 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { signup } from "@/app/actions/auth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const initialState = { error: "" };
 
@@ -13,54 +16,30 @@ export default function SignupPage() {
   }, initialState);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Create your PetSocial account</h1>
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 p-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold">🐾 Join PetSocial</h1>
+        <p className="mt-1 text-sm text-muted">Create an account for you and your pets</p>
+      </div>
 
-      <form action={formAction} className="flex flex-col gap-4">
-        <input
-          name="displayName"
-          type="text"
-          placeholder="Your name"
-          required
-          className="rounded border px-3 py-2"
-        />
-        <input
-          name="username"
-          type="text"
-          placeholder="Username"
-          required
-          className="rounded border px-3 py-2"
-        />
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          required
-          className="rounded border px-3 py-2"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-          minLength={6}
-          className="rounded border px-3 py-2"
-        />
+      <Card>
+        <form action={formAction} className="flex flex-col gap-4">
+          <Input name="displayName" type="text" placeholder="Your name" required />
+          <Input name="username" type="text" placeholder="Username" required />
+          <Input name="email" type="email" placeholder="Email" required />
+          <Input name="password" type="password" placeholder="Password" required minLength={6} />
 
-        {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.error && <p className="text-sm text-danger">{state.error}</p>}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
-        >
-          {pending ? "Creating account..." : "Sign up"}
-        </button>
-      </form>
+          <Button type="submit" disabled={pending}>
+            {pending ? "Creating account..." : "Sign up"}
+          </Button>
+        </form>
+      </Card>
 
-      <p className="text-sm">
+      <p className="text-center text-sm text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="underline">
+        <Link href="/login" className="text-primary underline">
           Log in
         </Link>
       </p>

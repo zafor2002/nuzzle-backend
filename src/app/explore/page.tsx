@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { Avatar } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FollowButton } from "@/app/owners/[username]/follow-button";
 
 export default async function ExplorePage() {
@@ -27,21 +30,27 @@ export default async function ExplorePage() {
     : new Set<string>();
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 p-6">
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-lg flex-col gap-4 p-6">
       <h1 className="text-2xl font-semibold">Explore</h1>
 
-      {owners.length === 0 && <p className="text-gray-500">No one to follow yet.</p>}
+      {owners.length === 0 && <EmptyState>No one to follow yet.</EmptyState>}
 
       <div className="flex flex-col gap-3">
-        {owners.map((owner) => (
-          <div key={owner.id} className="flex items-center justify-between rounded border px-4 py-3">
-            <Link href={`/owners/${owner.username}`}>
-              <p className="font-medium">{owner.isAnonymous ? "Anonymous" : owner.displayName}</p>
-              <p className="text-sm text-gray-500">@{owner.username}</p>
-            </Link>
-            {user && <FollowButton ownerId={owner.id} following={followingIds.has(owner.id)} />}
-          </div>
-        ))}
+        {owners.map((owner) => {
+          const displayName = owner.isAnonymous ? "Anonymous" : owner.displayName;
+          return (
+            <Card key={owner.id} className="flex items-center justify-between">
+              <Link href={`/owners/${owner.username}`} className="flex items-center gap-3">
+                <Avatar name={displayName} size="md" />
+                <div>
+                  <p className="font-medium">{displayName}</p>
+                  <p className="text-sm text-muted">@{owner.username}</p>
+                </div>
+              </Link>
+              {user && <FollowButton ownerId={owner.id} following={followingIds.has(owner.id)} />}
+            </Card>
+          );
+        })}
       </div>
     </main>
   );

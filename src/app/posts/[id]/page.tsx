@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { Avatar } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 import { LikeButton } from "./like-button";
 import { CommentForm } from "./comment-form";
 
@@ -38,21 +40,25 @@ export default async function PostDetailPage({
   const liked = user ? post.likes.some((l) => l.ownerId === user.id) : false;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 p-6">
-      <Link href="/feed" className="text-sm underline">
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-lg flex-col gap-4 p-6">
+      <Link href="/feed" className="text-sm text-muted hover:text-primary">
         &larr; Back to feed
       </Link>
 
-      <article className="flex flex-col gap-2 rounded border p-4">
-        <div className="flex items-center justify-between text-sm">
+      <Card className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
           {post.pet && !hidden ? (
-            <Link href={`/pets/${post.pet.id}`} className="font-medium underline">
-              {authorLabel}
+            <Link href={`/pets/${post.pet.id}`} className="flex items-center gap-2">
+              <Avatar name={authorLabel} size="sm" />
+              <span className="text-sm font-medium hover:underline">{authorLabel}</span>
             </Link>
           ) : (
-            <span className="font-medium">{authorLabel}</span>
+            <div className="flex items-center gap-2">
+              <Avatar name={authorLabel} size="sm" />
+              <span className="text-sm font-medium">{authorLabel}</span>
+            </div>
           )}
-          <span className="text-gray-400">{new Date(post.createdAt).toLocaleDateString()}</span>
+          <span className="text-xs text-muted">{new Date(post.createdAt).toLocaleDateString()}</span>
         </div>
 
         {post.caption && <p>{post.caption}</p>}
@@ -64,30 +70,33 @@ export default async function PostDetailPage({
             width={600}
             height={400}
             unoptimized
-            className="w-full rounded object-cover"
+            className="w-full rounded-md object-cover"
           />
         )}
 
         <LikeButton postId={post.id} likeCount={post.likes.length} liked={liked} />
-      </article>
+      </Card>
 
       <section className="flex flex-col gap-3">
         <h2 className="font-medium">Comments ({post.comments.length})</h2>
 
         {post.comments.map((comment) => (
-          <div key={comment.id} className="rounded border px-3 py-2 text-sm">
-            <span className="font-medium">
-              {comment.owner.isAnonymous ? "Anonymous" : comment.owner.displayName}:{" "}
-            </span>
-            {comment.body}
+          <div key={comment.id} className="flex items-start gap-2 rounded-md border border-border px-3 py-2 text-sm">
+            <Avatar name={comment.owner.isAnonymous ? "?" : comment.owner.displayName} size="sm" />
+            <p>
+              <span className="font-medium">
+                {comment.owner.isAnonymous ? "Anonymous" : comment.owner.displayName}
+              </span>{" "}
+              {comment.body}
+            </p>
           </div>
         ))}
 
         {user ? (
           <CommentForm postId={post.id} />
         ) : (
-          <p className="text-sm text-gray-500">
-            <Link href="/login" className="underline">
+          <p className="text-sm text-muted">
+            <Link href="/login" className="text-primary underline">
               Log in
             </Link>{" "}
             to comment.

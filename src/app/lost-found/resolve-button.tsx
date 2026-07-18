@@ -2,18 +2,20 @@
 
 import { useTransition } from "react";
 import { markResolved } from "@/app/actions/lost-found";
+import { Button } from "@/components/ui/button";
 
 export function ResolveButton({ id }: { id: string }) {
   const [pending, startTransition] = useTransition();
 
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
       disabled={pending}
       onClick={() => startTransition(() => markResolved(id))}
-      className="rounded border px-3 py-1 text-sm disabled:opacity-50"
+      className="self-start"
     >
       {pending ? "Updating..." : "Mark resolved"}
-    </button>
+    </Button>
   );
 }

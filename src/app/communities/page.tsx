@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function CommunitiesPage() {
   const groups = await prisma.pet.groupBy({
@@ -9,22 +11,20 @@ export default async function CommunitiesPage() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 p-6">
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-lg flex-col gap-6 p-6">
       <h1 className="text-2xl font-semibold">Communities</h1>
 
-      {groups.length === 0 && <p className="text-gray-500">No communities yet.</p>}
+      {groups.length === 0 && <EmptyState>No communities yet.</EmptyState>}
 
       <div className="flex flex-col gap-2">
         {groups.map((group) => (
-          <Link
-            key={group.species}
-            href={`/communities/${encodeURIComponent(group.species)}`}
-            className="flex items-center justify-between rounded border px-4 py-3"
-          >
-            <span className="font-medium">{group.species}</span>
-            <span className="text-sm text-gray-500">
-              {group._count._all} {group._count._all === 1 ? "pet" : "pets"}
-            </span>
+          <Link key={group.species} href={`/communities/${encodeURIComponent(group.species)}`}>
+            <Card className="flex items-center justify-between transition-colors hover:bg-muted-bg">
+              <span className="font-medium">{group.species}</span>
+              <span className="text-sm text-muted">
+                {group._count._all} {group._count._all === 1 ? "pet" : "pets"}
+              </span>
+            </Card>
           </Link>
         ))}
       </div>

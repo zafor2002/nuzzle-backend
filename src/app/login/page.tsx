@@ -3,6 +3,9 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { login } from "@/app/actions/auth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const initialState = { error: "" };
 
@@ -13,39 +16,28 @@ export default function LoginPage() {
   }, initialState);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Log in to PetSocial</h1>
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 p-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold">Welcome back</h1>
+        <p className="mt-1 text-sm text-muted">Log in to PetSocial</p>
+      </div>
 
-      <form action={formAction} className="flex flex-col gap-4">
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          required
-          className="rounded border px-3 py-2"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-          className="rounded border px-3 py-2"
-        />
+      <Card>
+        <form action={formAction} className="flex flex-col gap-4">
+          <Input name="email" type="email" placeholder="Email" required />
+          <Input name="password" type="password" placeholder="Password" required />
 
-        {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.error && <p className="text-sm text-danger">{state.error}</p>}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
-        >
-          {pending ? "Logging in..." : "Log in"}
-        </button>
-      </form>
+          <Button type="submit" disabled={pending}>
+            {pending ? "Logging in..." : "Log in"}
+          </Button>
+        </form>
+      </Card>
 
-      <p className="text-sm">
+      <p className="text-center text-sm text-muted">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="underline">
+        <Link href="/signup" className="text-primary underline">
           Sign up
         </Link>
       </p>
