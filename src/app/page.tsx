@@ -10,7 +10,10 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   const owner = user
-    ? await prisma.owner.findUnique({ where: { id: user.id } })
+    ? await prisma.owner.findUnique({
+        where: { id: user.id },
+        include: { pets: true },
+      })
     : null;
 
   return (
@@ -22,11 +25,29 @@ export default async function Home() {
           <p>
             Welcome back, <span className="font-medium">{owner.displayName}</span> (@{owner.username})
           </p>
-          <form action={logout}>
-            <button type="submit" className="rounded bg-black px-4 py-2 text-white">
-              Log out
-            </button>
-          </form>
+
+          <div className="flex w-full flex-col gap-2">
+            {owner.pets.map((pet) => (
+              <Link
+                key={pet.id}
+                href={`/pets/${pet.id}`}
+                className="rounded border px-4 py-2 text-left"
+              >
+                {pet.name} <span className="text-sm text-gray-500">({pet.species})</span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex gap-4">
+            <Link href="/pets/new" className="rounded bg-black px-4 py-2 text-white">
+              Add a pet
+            </Link>
+            <form action={logout}>
+              <button type="submit" className="rounded border px-4 py-2">
+                Log out
+              </button>
+            </form>
+          </div>
         </>
       ) : (
         <div className="flex gap-4">
