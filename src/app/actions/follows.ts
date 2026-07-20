@@ -1,22 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { notify, actorLabel } from "@/lib/notify";
 
 export async function toggleFollow(targetOwnerId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireUser();
 
   if (user.id === targetOwnerId) {
+    return;
+  }
+
+  if (!rateLimit(`follow:${user.id}`, 60, 60 * 1000)) {
     return;
   }
 

@@ -1,18 +1,25 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
+
+const createHealthLogSchema = z.object({
+  type: z.enum(["vaccination", "vet_visit", "medication", "other"]),
+  title: z.string().trim().min(1).max(120),
+  notes: z.string().trim().max(1000).optional(),
+  date: z.coerce.date(),
+  reminderAt: z.coerce.date().optional(),
+});
 
 export async function createHealthLog(petId: string, formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireUser();
 
-  if (!user) {
-    redirect("/login");
+  if (!rateLimit(`health-log:${user.id}`, 30, 60 * 60 * 1000)) {
+    return { error: "Too many entries created recently. Please try again later." };
   }
 
   const pet = await prisma.pet.findFirst({ where: { id: petId, ownerId: user.id } });
@@ -20,25 +27,18 @@ export async function createHealthLog(petId: string, formData: FormData) {
     return { error: "You can only add health logs for your own pets." };
   }
 
-  const type = String(formData.get("type") ?? "").trim();
-  const title = String(formData.get("title") ?? "").trim();
-  const notes = String(formData.get("notes") ?? "").trim();
-  const date = String(formData.get("date") ?? "").trim();
-  const reminderAt = String(formData.get("reminderAt") ?? "").trim();
+  const parsed = createHealthLogSchema.safeParse({
+    type: formData.get("type"),
+    title: formData.get("title"),
+    notes: formData.get("notes") || undefined,
+    date: formData.get("date"),
+    reminderAt: formData.get("reminderAt") || undefined,
+  });
 
-  if (!type || !title || !date) {
-    return { error: "Type, title, and date are required." };
+  if (!parsed.success) {
+    return { error: "Type, title, and a valid date are required." };
   }
-
-  const parsedDate = new Date(date);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return { error: "Invalid date." };
-  }
-
-  const parsedReminder = reminderAt ? new Date(reminderAt) : null;
-  if (parsedReminder && Number.isNaN(parsedReminder.getTime())) {
-    return { error: "Invalid reminder date." };
-  }
+  const { type, title, notes, date, reminderAt } = parsed.data;
 
   await prisma.healthLog.create({
     data: {
@@ -46,8 +46,8 @@ export async function createHealthLog(petId: string, formData: FormData) {
       type,
       title,
       notes: notes || null,
-      date: parsedDate,
-      reminderAt: parsedReminder,
+      date,
+      reminderAt: reminderAt ?? null,
     },
   });
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { VoteArrow } from "@/components/vote-arrow";
+import { isHidden } from "@/lib/visibility";
 
 type PostCardPost = {
   id: string;
@@ -15,7 +16,7 @@ type PostCardPost = {
 };
 
 export function PostCard({ post, currentUserId }: { post: PostCardPost; currentUserId?: string }) {
-  const hidden = post.pet ? post.pet.isAnonymous || post.owner.isAnonymous : post.owner.isAnonymous;
+  const hidden = isHidden(post.pet, post.owner);
   const authorName = post.pet ? post.pet.name : post.owner.displayName;
   const authorLabel = hidden ? "Anonymous" : authorName;
   const authorHref = post.pet ? `/pets/${post.pet.id}` : `/owners/${post.owner.username}`;

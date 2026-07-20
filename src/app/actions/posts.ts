@@ -1,27 +1,39 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
+
+const createPostSchema = z
+  .object({
+    caption: z.string().trim().max(2000).optional(),
+    mediaUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+    petId: z.string().trim().max(100).optional(),
+  })
+  .refine((data) => data.caption || data.mediaUrl, {
+    message: "Add a caption or an image URL.",
+  });
 
 export async function createPost(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireUser();
 
-  if (!user) {
-    redirect("/login");
+  if (!rateLimit(`create-post:${user.id}`, 20, 60 * 60 * 1000)) {
+    return { error: "You're posting too frequently. Please slow down." };
   }
 
-  const caption = String(formData.get("caption") ?? "").trim();
-  const mediaUrl = String(formData.get("mediaUrl") ?? "").trim();
-  const petId = String(formData.get("petId") ?? "").trim();
+  const parsed = createPostSchema.safeParse({
+    caption: formData.get("caption") || undefined,
+    mediaUrl: formData.get("mediaUrl") || undefined,
+    petId: formData.get("petId") || undefined,
+  });
 
-  if (!caption && !mediaUrl) {
-    return { error: "Add a caption or an image URL." };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
+  const { caption, mediaUrl, petId } = parsed.data;
 
   if (petId) {
     const pet = await prisma.pet.findFirst({ where: { id: petId, ownerId: user.id } });

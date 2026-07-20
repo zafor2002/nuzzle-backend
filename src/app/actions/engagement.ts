@@ -1,19 +1,17 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { notify, actorLabel } from "@/lib/notify";
 
 export async function toggleLike(postId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireUser();
 
-  if (!user) {
-    redirect("/login");
+  if (!rateLimit(`like:${user.id}`, 60, 60 * 1000)) {
+    return;
   }
 
   const existing = await prisma.like.findUnique({
@@ -36,20 +34,22 @@ export async function toggleLike(postId: string) {
   revalidatePath("/feed");
 }
 
-export async function addComment(postId: string, formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const commentSchema = z.object({
+  body: z.string().trim().min(1).max(1000),
+});
 
-  if (!user) {
-    redirect("/login");
+export async function addComment(postId: string, formData: FormData) {
+  const user = await requireUser();
+
+  if (!rateLimit(`comment:${user.id}`, 20, 60 * 1000)) {
+    return { error: "You're commenting too frequently. Please slow down." };
   }
 
-  const body = String(formData.get("body") ?? "").trim();
-  if (!body) {
+  const parsed = commentSchema.safeParse({ body: formData.get("body") });
+  if (!parsed.success) {
     return { error: "Comment can't be empty." };
   }
+  const { body } = parsed.data;
 
   await prisma.comment.create({
     data: { postId, ownerId: user.id, body },

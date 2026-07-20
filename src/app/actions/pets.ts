@@ -1,28 +1,38 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
+
+const createPetSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  species: z.string().trim().min(1).max(60),
+  breed: z.string().trim().max(60).optional(),
+  bio: z.string().trim().max(500).optional(),
+  isAnonymous: z.boolean(),
+});
 
 export async function createPet(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireUser();
 
-  if (!user) {
-    redirect("/login");
+  if (!rateLimit(`create-pet:${user.id}`, 10, 60 * 60 * 1000)) {
+    return { error: "Too many pets created recently. Please try again later." };
   }
 
-  const name = String(formData.get("name")).trim();
-  const species = String(formData.get("species")).trim();
-  const breed = String(formData.get("breed") ?? "").trim();
-  const bio = String(formData.get("bio") ?? "").trim();
-  const isAnonymous = formData.get("isAnonymous") === "on";
+  const parsed = createPetSchema.safeParse({
+    name: formData.get("name"),
+    species: formData.get("species"),
+    breed: formData.get("breed") || undefined,
+    bio: formData.get("bio") || undefined,
+    isAnonymous: formData.get("isAnonymous") === "on",
+  });
 
-  if (!name || !species) {
-    return { error: "Name and species are required." };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
+  const { name, species, breed, bio, isAnonymous } = parsed.data;
 
   const pet = await prisma.pet.create({
     data: {

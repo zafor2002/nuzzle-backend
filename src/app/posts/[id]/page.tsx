@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { VoteArrow } from "@/components/vote-arrow";
 import { Shell } from "@/components/shell";
 import { LeftSidebar } from "@/components/left-sidebar";
+import { isHidden } from "@/lib/visibility";
 import { CommentForm } from "./comment-form";
 
 export default async function PostDetailPage({
@@ -36,7 +37,7 @@ export default async function PostDetailPage({
     notFound();
   }
 
-  const hidden = post.pet ? post.pet.isAnonymous || post.owner.isAnonymous : post.owner.isAnonymous;
+  const hidden = isHidden(post.pet, post.owner);
   const authorName = post.pet ? post.pet.name : post.owner.displayName;
   const authorLabel = hidden ? "Anonymous" : authorName;
   const liked = user ? post.likes.some((l) => l.ownerId === user.id) : false;

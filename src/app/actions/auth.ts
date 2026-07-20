@@ -1,18 +1,46 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+
+const signupSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(6).max(72),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3)
+    .max(30)
+    .regex(/^[a-z0-9_]+$/, "Username can only contain letters, numbers, and underscores."),
+  displayName: z.string().trim().min(1).max(100),
+});
+
+const loginSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(1).max(72),
+});
 
 export async function signup(formData: FormData) {
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
-  const username = String(formData.get("username")).trim().toLowerCase();
-  const displayName = String(formData.get("displayName")).trim();
-
-  if (!email || !password || !username || !displayName) {
-    return { error: "All fields are required." };
+  const ip = await getClientIp();
+  if (!rateLimit(`signup:${ip}`, 5, 60 * 60 * 1000)) {
+    return { error: "Too many signup attempts. Please try again later." };
   }
+
+  const parsed = signupSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    username: formData.get("username"),
+    displayName: formData.get("displayName"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+  const { email, password, username, displayName } = parsed.data;
 
   const existing = await prisma.owner.findUnique({ where: { username } });
   if (existing) {
@@ -47,11 +75,18 @@ export async function signup(formData: FormData) {
 }
 
 export async function login(formData: FormData) {
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
 
-  if (!email || !password) {
+  if (!parsed.success) {
     return { error: "Email and password are required." };
+  }
+  const { email, password } = parsed.data;
+
+  if (!rateLimit(`login:${email}`, 8, 5 * 60 * 1000)) {
+    return { error: "Too many login attempts. Please try again in a few minutes." };
   }
 
   const supabase = await createClient();

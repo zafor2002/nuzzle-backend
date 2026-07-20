@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { isHidden } from "@/lib/visibility";
 
 export default async function PetProfilePage({
   params,
@@ -29,7 +30,7 @@ export default async function PetProfilePage({
   }
 
   const isOwner = user?.id === pet.ownerId;
-  const ownerIsHidden = pet.isAnonymous || pet.owner.isAnonymous;
+  const ownerIsHidden = isHidden(pet, pet.owner);
 
   const healthLogs = isOwner
     ? await prisma.healthLog.findMany({ where: { petId: pet.id }, orderBy: { date: "desc" } })

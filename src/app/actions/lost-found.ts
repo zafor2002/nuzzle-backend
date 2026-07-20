@@ -1,31 +1,37 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
+
+const createLostFoundSchema = z.object({
+  status: z.enum(["lost", "found"]),
+  petId: z.string().trim().max(100).optional(),
+  description: z.string().trim().min(1).max(2000),
+  contactInfo: z.string().trim().max(200).optional(),
+});
 
 export async function createLostFoundPost(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireUser();
 
-  if (!user) {
-    redirect("/login");
+  if (!rateLimit(`lost-found:${user.id}`, 10, 60 * 60 * 1000)) {
+    return { error: "Too many reports created recently. Please try again later." };
   }
 
-  const status = String(formData.get("status") ?? "lost");
-  const petId = String(formData.get("petId") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const contactInfo = String(formData.get("contactInfo") ?? "").trim();
+  const parsed = createLostFoundSchema.safeParse({
+    status: formData.get("status") ?? "lost",
+    petId: formData.get("petId") || undefined,
+    description: formData.get("description"),
+    contactInfo: formData.get("contactInfo") || undefined,
+  });
 
-  if (status !== "lost" && status !== "found") {
-    return { error: "Invalid status." };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
-  if (!description) {
-    return { error: "Description is required." };
-  }
+  const { status, petId, description, contactInfo } = parsed.data;
 
   if (petId) {
     const pet = await prisma.pet.findFirst({ where: { id: petId, ownerId: user.id } });
@@ -49,14 +55,7 @@ export async function createLostFoundPost(formData: FormData) {
 }
 
 export async function markResolved(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireUser();
 
   const post = await prisma.lostFoundPost.findFirst({ where: { id, ownerId: user.id } });
   if (!post) {

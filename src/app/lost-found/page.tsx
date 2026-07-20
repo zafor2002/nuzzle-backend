@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ResolveButton } from "./resolve-button";
 import { Shell } from "@/components/shell";
 import { LeftSidebar } from "@/components/left-sidebar";
+import { isHidden } from "@/lib/visibility";
 
 export default async function LostFoundPage() {
   const supabase = await createClient();
@@ -36,7 +37,7 @@ export default async function LostFoundPage() {
 
       <div className="flex flex-col gap-4">
         {posts.map((post) => {
-          const hidden = post.pet ? post.pet.isAnonymous || post.owner.isAnonymous : post.owner.isAnonymous;
+          const hidden = isHidden(post.pet, post.owner);
           const authorLabel = hidden ? "Anonymous" : post.owner.displayName;
           const isMine = user?.id === post.ownerId;
 
