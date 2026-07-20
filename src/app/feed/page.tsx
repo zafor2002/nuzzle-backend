@@ -3,6 +3,9 @@ import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { PostCard } from "@/components/post-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Shell } from "@/components/shell";
+import { LeftSidebar } from "@/components/left-sidebar";
+import { RightSidebar } from "@/components/right-sidebar";
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -23,32 +26,39 @@ export default async function FeedPage() {
     where: ownerIdFilter ? { ownerId: { in: ownerIdFilter } } : undefined,
     orderBy: { createdAt: "desc" },
     take: 50,
-    include: { owner: true, pet: true, _count: { select: { likes: true, comments: true } } },
+    include: {
+      owner: true,
+      pet: true,
+      _count: { select: { likes: true, comments: true } },
+      likes: { where: { ownerId: user?.id ?? "__none__" }, select: { ownerId: true } },
+    },
   });
 
   const isFollowingFeed = Boolean(ownerIdFilter);
   const isEmptyFollowingFeed = isFollowingFeed && posts.length === 0;
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-lg flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Feed</h1>
-
-      {isEmptyFollowingFeed && (
-        <EmptyState>
-          No posts yet from people you follow.{" "}
-          <Link href="/explore" className="text-primary underline">
-            Explore
-          </Link>{" "}
-          to find pets and owners to follow.
-        </EmptyState>
-      )}
-      {!isFollowingFeed && posts.length === 0 && <EmptyState>No posts yet.</EmptyState>}
-
+    <Shell left={<LeftSidebar />} right={<RightSidebar />}>
       <div className="flex flex-col gap-4">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
+        <h1 className="text-2xl font-semibold">Home</h1>
+
+        {isEmptyFollowingFeed && (
+          <EmptyState>
+            No posts yet from people you follow.{" "}
+            <Link href="/explore" className="text-primary underline">
+              Explore
+            </Link>{" "}
+            to find pets and owners to follow.
+          </EmptyState>
+        )}
+        {!isFollowingFeed && posts.length === 0 && <EmptyState>No posts yet.</EmptyState>}
+
+        <div className="flex flex-col gap-2">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} currentUserId={user?.id} />
+          ))}
+        </div>
       </div>
-    </main>
+    </Shell>
   );
 }

@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResolveButton } from "./resolve-button";
+import { Shell } from "@/components/shell";
+import { LeftSidebar } from "@/components/left-sidebar";
 
 export default async function LostFoundPage() {
   const supabase = await createClient();
@@ -21,7 +23,8 @@ export default async function LostFoundPage() {
   });
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-lg flex-col gap-6 p-6">
+    <Shell left={<LeftSidebar />}>
+      <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Lost & Found</h1>
         <Link href="/lost-found/new">
@@ -65,6 +68,7 @@ export default async function LostFoundPage() {
           );
         })}
       </div>
-    </main>
+      </div>
+    </Shell>
   );
 }

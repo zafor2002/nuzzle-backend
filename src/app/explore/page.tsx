@@ -5,6 +5,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FollowButton } from "@/app/owners/[username]/follow-button";
+import { Shell } from "@/components/shell";
+import { LeftSidebar } from "@/components/left-sidebar";
 
 export default async function ExplorePage() {
   const supabase = await createClient();
@@ -30,28 +32,30 @@ export default async function ExplorePage() {
     : new Set<string>();
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-lg flex-col gap-4 p-6">
-      <h1 className="text-2xl font-semibold">Explore</h1>
+    <Shell left={<LeftSidebar />}>
+      <div className="flex flex-col gap-4">
+        <h1 className="text-2xl font-semibold">Explore</h1>
 
-      {owners.length === 0 && <EmptyState>No one to follow yet.</EmptyState>}
+        {owners.length === 0 && <EmptyState>No one to follow yet.</EmptyState>}
 
-      <div className="flex flex-col gap-3">
-        {owners.map((owner) => {
-          const displayName = owner.isAnonymous ? "Anonymous" : owner.displayName;
-          return (
-            <Card key={owner.id} className="flex items-center justify-between">
-              <Link href={`/owners/${owner.username}`} className="flex items-center gap-3">
-                <Avatar name={displayName} size="md" />
-                <div>
-                  <p className="font-medium">{displayName}</p>
-                  <p className="text-sm text-muted">@{owner.username}</p>
-                </div>
-              </Link>
-              {user && <FollowButton ownerId={owner.id} following={followingIds.has(owner.id)} />}
-            </Card>
-          );
-        })}
+        <div className="flex flex-col gap-3">
+          {owners.map((owner) => {
+            const displayName = owner.isAnonymous ? "Anonymous" : owner.displayName;
+            return (
+              <Card key={owner.id} className="flex items-center justify-between">
+                <Link href={`/owners/${owner.username}`} className="flex items-center gap-3">
+                  <Avatar name={displayName} size="md" />
+                  <div>
+                    <p className="font-medium">{displayName}</p>
+                    <p className="text-sm text-muted">@{owner.username}</p>
+                  </div>
+                </Link>
+                {user && <FollowButton ownerId={owner.id} following={followingIds.has(owner.id)} />}
+              </Card>
+            );
+          })}
+        </div>
       </div>
-    </main>
+    </Shell>
   );
 }

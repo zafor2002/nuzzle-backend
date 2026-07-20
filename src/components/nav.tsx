@@ -21,7 +21,7 @@ export async function Nav() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
-      <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="shrink-0 text-lg font-semibold text-primary">
           🐾 PetSocial
         </Link>
@@ -53,7 +53,7 @@ export async function Nav() {
       </div>
 
       {owner && (
-        <nav className="mx-auto flex max-w-2xl gap-1 overflow-x-auto px-4 pb-2 text-sm whitespace-nowrap">
+        <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-2 text-sm whitespace-nowrap lg:hidden">
           <Link href="/feed" className="shrink-0 rounded-md px-2 py-1 hover:bg-muted-bg">
             Feed
           </Link>
