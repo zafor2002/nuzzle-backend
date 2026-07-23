@@ -24,6 +24,10 @@ export async function Nav() {
     ? await prisma.notification.count({ where: { ownerId: user.id, isRead: false } })
     : 0;
 
+  const unreadMessages = user
+    ? await prisma.message.count({ where: { receiverId: user.id, readAt: null } })
+    : 0;
+
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
@@ -34,6 +38,14 @@ export async function Nav() {
 
           {owner ? (
             <div className="flex shrink-0 items-center gap-3">
+              <Link href="/messages" className="relative text-muted hover:text-foreground">
+                <Icon name="send" className="h-6 w-6" />
+                {unreadMessages > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium text-white">
+                    {unreadMessages}
+                  </span>
+                )}
+              </Link>
               <Link href="/notifications" className="relative hidden text-muted hover:text-foreground lg:block">
                 <Icon name="bell" className="h-6 w-6" />
                 {unreadCount > 0 && (

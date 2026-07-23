@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/icon";
 const NAV_LINKS = [
   { href: "/feed", label: "Home", icon: "home" as const },
   { href: "/explore", label: "Explore", icon: "compass" as const },
+  { href: "/messages", label: "Messages", icon: "send" as const },
   { href: "/lost-found", label: "Lost & Found", icon: "siren" as const },
   { href: "/notifications", label: "Alerts", icon: "bell" as const },
 ];

@@ -61,7 +61,14 @@ export default async function OwnerProfilePage({
             <Button variant="secondary">Edit profile</Button>
           </Link>
         )}
-        {!isSelf && user && <FollowButton ownerId={owner.id} following={isFollowing} />}
+        {!isSelf && user && (
+          <div className="flex items-center gap-2">
+            <Link href={`/messages/${owner.username}`}>
+              <Button variant="secondary">Message</Button>
+            </Link>
+            <FollowButton ownerId={owner.id} following={isFollowing} />
+          </div>
+        )}
       </div>
 
       {owner.bio && !owner.isAnonymous && <p>{owner.bio}</p>}
