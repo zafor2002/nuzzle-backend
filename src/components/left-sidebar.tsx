@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 
 const NAV_LINKS = [
-  { href: "/feed", label: "🏠 Home" },
-  { href: "/explore", label: "🔎 Explore" },
-  { href: "/lost-found", label: "🚨 Lost & Found" },
-  { href: "/notifications", label: "🔔 Alerts" },
+  { href: "/feed", label: "Home", icon: "home" as const },
+  { href: "/explore", label: "Explore", icon: "compass" as const },
+  { href: "/lost-found", label: "Lost & Found", icon: "siren" as const },
+  { href: "/notifications", label: "Alerts", icon: "bell" as const },
 ];
 
 export async function LeftSidebar() {
@@ -24,8 +25,9 @@ export async function LeftSidebar() {
           <Link
             key={link.href}
             href={link.href}
-            className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted-bg"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted-bg"
           >
+            <Icon name={link.icon} className="h-5 w-5 text-muted" />
             {link.label}
           </Link>
         ))}

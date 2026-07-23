@@ -13,7 +13,7 @@
   --danger-bg: #fce8ec;
   --success: #4fae74;
   --success-bg: #eaf7ef;
-  --radius: 0.75rem;
+  --radius: 1.25rem;
 }
 
 @theme inline {

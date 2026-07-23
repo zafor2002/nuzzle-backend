@@ -43,7 +43,7 @@ export default async function OwnerProfilePage({
   const displayName = owner.isAnonymous ? "Anonymous" : owner.displayName;
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-lg flex-col gap-4 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-65px)] max-w-lg flex-col gap-4 p-6">
       <Link href="/feed" className="text-sm text-muted hover:text-primary">
         &larr; Back to feed
       </Link>

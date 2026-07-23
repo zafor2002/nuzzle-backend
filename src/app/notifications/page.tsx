@@ -4,11 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { markAllRead } from "@/app/actions/notifications";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Icon } from "@/components/ui/icon";
 
-const ICONS: Record<string, string> = {
-  like: "❤️",
-  comment: "💬",
-  follow: "👤",
+const ICONS: Record<string, { name: Parameters<typeof Icon>[0]["name"]; className: string }> = {
+  like: { name: "heart", className: "text-danger" },
+  comment: { name: "comment", className: "text-primary" },
+  follow: { name: "user", className: "text-success" },
 };
 
 export default async function NotificationsPage() {
@@ -30,7 +31,7 @@ export default async function NotificationsPage() {
   const hasUnread = notifications.some((n) => !n.isRead);
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-lg flex-col gap-6 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-65px)] max-w-lg flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Notifications</h1>
         {hasUnread && (
@@ -50,7 +51,11 @@ export default async function NotificationsPage() {
             key={n.id}
             className={`flex items-start gap-3 rounded-md border border-border px-4 py-3 text-sm ${n.isRead ? "" : "bg-muted-bg"}`}
           >
-            <span>{ICONS[n.type] ?? "🔔"}</span>
+            <Icon
+              name={ICONS[n.type]?.name ?? "bell"}
+              className={`h-5 w-5 shrink-0 ${ICONS[n.type]?.className ?? "text-muted"}`}
+              filled={n.type === "like"}
+            />
             <div>
               <p>{n.message}</p>
               <p className="mt-1 text-xs text-muted">{new Date(n.createdAt).toLocaleString()}</p>

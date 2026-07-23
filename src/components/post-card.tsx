@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { VoteArrow } from "@/components/vote-arrow";
+import { Icon } from "@/components/ui/icon";
 import { isHidden } from "@/lib/visibility";
 
 type PostCardPost = {
@@ -72,7 +73,7 @@ export function PostCard({ post, currentUserId }: { post: PostCardPost; currentU
           href={`/posts/${post.id}`}
           className="mt-1 flex w-fit items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted hover:bg-muted-bg"
         >
-          💬 {post._count.comments} comments
+          <Icon name="comment" className="h-4 w-4" /> {post._count.comments} comments
         </Link>
       </div>
     </Card>

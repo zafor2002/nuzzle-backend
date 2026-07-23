@@ -16,7 +16,7 @@ export default function LoginPage() {
   }, initialState);
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-sm flex-col justify-center gap-6 p-6">
+    <main className="mx-auto flex w-full min-h-[calc(100vh-65px)] max-w-sm flex-col justify-center gap-6 p-6">
       <div className="text-center">
         <h1 className="text-2xl font-semibold">Welcome back</h1>
         <p className="mt-1 text-sm text-muted">Log in to PetSocial</p>
