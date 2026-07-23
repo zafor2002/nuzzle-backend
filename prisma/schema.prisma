@@ -33,6 +33,7 @@ model Owner {
   notifications Notification[]
   lostFoundPosts LostFoundPost[]
   adoptionListings AdoptionListing[]
+  appointments  Appointment[]
 }
 
 model Pet {
@@ -52,6 +53,7 @@ model Pet {
   posts        Post[]
   healthLogs   HealthLog[]
   lostFoundPosts LostFoundPost[]
+  appointments Appointment[]
 
   @@index([ownerId])
 }
@@ -202,4 +204,36 @@ model AdoptionListing {
   updatedAt   DateTime @updatedAt
 
   @@index([posterId])
+}
+
+model Vet {
+  id         String   @id @default(cuid())
+  name       String
+  clinicName String
+  location   String?
+  bio        String?
+  avatarUrl  String?
+  rating     Float    @default(4.8)
+  createdAt  DateTime @default(now())
+
+  appointments Appointment[]
+}
+
+model Appointment {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  vetId       String
+  vet         Vet      @relation(fields: [vetId], references: [id], onDelete: Cascade)
+  reason      String
+  scheduledAt DateTime
+  status      String   @default("confirmed") // "confirmed" | "cancelled" | "completed"
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([ownerId])
+  @@index([petId])
+  @@index([vetId, scheduledAt])
 }

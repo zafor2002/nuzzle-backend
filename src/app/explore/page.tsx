@@ -82,6 +82,12 @@ export default async function ExplorePage({
             <Icon name="heart" className="h-4 w-4" /> Adopt
           </Link>
           <Link
+            href="/vet"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium"
+          >
+            <Icon name="cross" className="h-4 w-4" /> Book a Vet
+          </Link>
+          <Link
             href="/lost-found"
             className="flex shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium"
           >

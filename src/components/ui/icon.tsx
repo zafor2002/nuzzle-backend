@@ -20,6 +20,8 @@ const PATHS: Record<string, string> = {
   check: "M5 12l5 5 9-10",
   siren: "M12 3L1 21h22L12 3zM12 10v5M12 18h.01",
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
+  cross: "M2 12h4l1.5-4 3 12 2.5-14 2 6h6.5",
+  calendar: "M3 5h18v16H3zM3 10h18M8 3v4M16 3v4",
 };
 
 export function Icon({
