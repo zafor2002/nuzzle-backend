@@ -22,6 +22,7 @@ const PATHS: Record<string, string> = {
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
   cross: "M2 12h4l1.5-4 3 12 2.5-14 2 6h6.5",
   calendar: "M3 5h18v16H3zM3 10h18M8 3v4M16 3v4",
+  cart: "M3 4h2.2l1 3M6.2 7h13.6l-1.5 8H8.5L6.2 7zM9 19a1.2 1.2 0 100 2.4A1.2 1.2 0 009 19zM17 19a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4z",
 };
 
 export function Icon({
