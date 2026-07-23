@@ -1,0 +1,215 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+\definecolor{codebg}{RGB}{244,244,244}
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  showstringspaces=false
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{PetSocial --- Deployment Guide}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\title{PetSocial\\\large Deployment Guide}
+\author{PetSocial Development Documentation}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+\tableofcontents
+
+\section{Overview}
+PetSocial deploys as two independent pieces: the Next.js application (hosted on
+Vercel) and its data layer (a Supabase project, providing PostgreSQL, Auth, and file
+storage). Vercel builds and redeploys automatically on every push to the connected Git
+branch, giving continuous delivery with no separate release step.
+
+\section{Prerequisites}
+\begin{itemize}[leftmargin=*]
+  \item Node.js 20 or later and npm.
+  \item A Supabase account and project (free tier is sufficient for development).
+  \item A GitHub account and a Vercel account (Vercel can authenticate directly against
+        GitHub).
+\end{itemize}
+
+\section{Supabase Project Setup}
+
+\subsection{Database connection strings}
+Supabase exposes two relevant Postgres connection modes, and the project uses both for
+different purposes:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Transaction pooler} (port 6543) --- used by the running application at
+        runtime, because it handles many short-lived connections well, as is typical in
+        a serverless deployment. Requires the query parameter
+        \texttt{pgbouncer=true}, since transaction-mode pooling does not support
+        prepared statements.
+  \item \textbf{Session pooler} (port 5432) --- used only for running migrations, since
+        transaction-mode pooling does not support the schema-changing statements
+        Prisma Migrate issues.
+\end{itemize}
+
+Both are found in the Supabase dashboard under \textbf{Settings $\to$ Database
+$\to$ Connection string}.
+
+\subsection{Environment variables}
+\begin{longtable}{@{}p{4.6cm}p{9.4cm}@{}}
+\toprule
+\textbf{Variable} & \textbf{Purpose} \\
+\midrule
+\endhead
+\texttt{DATABASE\_URL} & Transaction pooler connection string, with
+  \texttt{?pgbouncer=true} appended. Used by the application at runtime. \\
+\texttt{DIRECT\_URL} & Session pooler connection string. Used only by
+  \texttt{prisma migrate}. \\
+\texttt{NEXT\_PUBLIC\_SUPABASE\_URL} & The project's API URL, from
+  \textbf{Settings $\to$ API}. \\
+\texttt{NEXT\_PUBLIC\_SUPABASE\_PUBLISHABLE\_KEY} & The project's publishable
+  (anonymous) API key, from the same page. \\
+\bottomrule
+\end{longtable}
+
+Copy \texttt{.env.example} to \texttt{.env} for local development and fill in the four
+values above; \texttt{.env} and \texttt{.env.local} are both git-ignored and must never
+be committed.
+
+\subsection{Storage bucket and policies}
+Every user-uploaded image (post photos, avatars, adoption and marketplace listing
+photos) is stored in a single public bucket named \texttt{post-media}.
+
+\begin{enumerate}[leftmargin=*]
+  \item In the Supabase dashboard, go to \textbf{Storage $\to$ New bucket}, name it
+        \texttt{post-media}, and mark it \textbf{public}.
+  \item In \textbf{SQL Editor}, run:
+\end{enumerate}
+
+\begin{lstlisting}
+create policy "Allow authenticated uploads to post-media"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'post-media');
+
+create policy "Allow public read of post-media"
+on storage.objects for select
+to public
+using (bucket_id = 'post-media');
+\end{lstlisting}
+
+The dashboard's built-in policy templates were found, during development, to be scoped
+incorrectly for this use case; the explicit SQL above is the known-good version.
+
+\subsection{Authentication settings}
+\begin{itemize}[leftmargin=*]
+  \item For local development, email confirmation can be turned off under
+        \textbf{Authentication $\to$ Sign In / Providers $\to$ Email}, so that signing
+        up logs a user in immediately without needing to click a confirmation link.
+  \item \textbf{This must be turned back on before any public deployment.}
+  \item Supabase's default built-in email sender has a very low rate limit (a handful
+        of emails per hour). Before relying on real confirmation or password-reset
+        emails in production, configure a custom SMTP provider under
+        \textbf{Authentication $\to$ Emails}.
+\end{itemize}
+
+\section{Local Development}
+\begin{lstlisting}
+npm install
+npx prisma migrate dev --name init   # only needed once, against a fresh database
+npm run dev
+\end{lstlisting}
+The application is then available at \texttt{http://localhost:3000}.
+
+\section{Database Migrations}
+Every schema change is applied through Prisma Migrate, never by hand-editing the
+database:
+\begin{lstlisting}
+npx prisma migrate dev --name <short_description>
+\end{lstlisting}
+This command reads \texttt{DIRECT\_URL} (via \texttt{prisma.config.ts}), creates a new
+timestamped folder under \texttt{prisma/migrations/}, applies it, and regenerates the
+Prisma Client. Migration folders are committed to version control; the generated
+client is not (see below).
+
+\section{The Generated Prisma Client}
+The Prisma Client is generated into \texttt{src/generated/prisma/} and is
+\textbf{deliberately excluded from version control} via \texttt{.gitignore}, since it
+is build output, not source. This has one important consequence: any environment that
+checks out the repository fresh --- including Vercel --- must regenerate the client
+before building, or the build fails with:
+\begin{lstlisting}
+Module not found: Can't resolve '@/generated/prisma/client'
+\end{lstlisting}
+This is handled by a \texttt{postinstall} script in \texttt{package.json}:
+\begin{lstlisting}
+"scripts": {
+  "postinstall": "prisma generate"
+}
+\end{lstlisting}
+which npm runs automatically after every \texttt{npm install}, including the one
+Vercel performs at the start of every build. If this script is ever removed, every
+fresh deployment will fail with the error above.
+
+\section{GitHub}
+\begin{enumerate}[leftmargin=*]
+  \item Create a new, empty repository on GitHub (no README, license, or
+        \texttt{.gitignore} --- the project already has its own).
+  \item From the project directory:
+\begin{lstlisting}
+git remote add origin https://github.com/<you>/<repo>.git
+git branch -M main
+git push -u origin main
+\end{lstlisting}
+\end{enumerate}
+
+\section{Vercel}
+\begin{enumerate}[leftmargin=*]
+  \item At \url{https://vercel.com/new}, sign in (GitHub sign-in is simplest) and click
+        \textbf{Import} next to the repository.
+  \item Vercel auto-detects the Next.js framework; the default build settings do not
+        need to change.
+  \item Before deploying, add the four environment variables listed in
+        \S~3.2 under \textbf{Environment Variables}.
+  \item Click \textbf{Deploy}. Every subsequent push to the connected branch triggers a
+        new build and deployment automatically --- there is no manual redeploy step for
+        ordinary changes.
+\end{enumerate}
+
+\section{Post-Deployment Checklist}
+\begin{itemize}[leftmargin=*]
+  \item Re-enable Supabase email confirmation and configure custom SMTP (\S~3.4).
+  \item Rotate the database password if it was ever shared outside of the Supabase
+        dashboard or a properly secured secrets manager.
+  \item Replace the in-memory rate limiter (\texttt{src/lib/rate-limit.ts}) with a
+        shared store (e.g.\ Upstash Redis) if the deployment runs across more than one
+        serverless instance; see the System Architecture document, \S~``Rate
+        Limiting''.
+  \item Confirm the Storage bucket policies from \S~3.3 are present --- they are
+        project-level Supabase configuration and are not recreated by any code in this
+        repository.
+\end{itemize}
+
+\end{document}

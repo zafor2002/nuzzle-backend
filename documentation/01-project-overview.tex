@@ -1,0 +1,132 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{PetSocial --- Project Overview}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\title{PetSocial\\\large Project Overview}
+\author{PetSocial Development Documentation}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\tableofcontents
+
+\section{Introduction}
+PetSocial is a social networking web application built specifically for pet owners and
+their pets. Where general-purpose social networks treat a pet as an afterthought (a tag,
+a photo caption), PetSocial treats each pet as a first-class citizen of the platform: a
+pet can have its own profile, its own followers, and its own posts, independent of --- but
+linked to --- its owner's account.
+
+\section{Motivation}
+General social networks are not designed around the specific needs of pet owners:
+
+\begin{itemize}[leftmargin=*]
+  \item There is no dedicated place to track a pet's health history (vaccinations, vet
+        visits, medication) alongside its social presence.
+  \item Lost-and-found alerts, breed-specific communities, adoption listings, and
+        veterinary booking are all handled by separate, disconnected apps and services.
+  \item Owners who wish to keep their identity private (for safety or personal
+        preference) have no first-class way to do so while still participating socially
+        through their pet's profile.
+\end{itemize}
+
+PetSocial addresses these gaps by combining social networking, pet health record
+keeping, local community discovery, and pet-commerce (adoption and marketplace) features
+into a single, coherent product.
+
+\section{Target Audience}
+\begin{itemize}[leftmargin=*]
+  \item Individual pet owners who want to share their pet's life and connect with other
+        owners.
+  \item Breed- and species-specific enthusiast communities.
+  \item Animal shelters and rescue organisations posting adoptable pets.
+  \item Local veterinary clinics offering appointment booking.
+  \item Owners buying and selling pet products peer-to-peer.
+\end{itemize}
+
+\section{Product Pillars}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Pet-first identity.} A pet profile is a distinct entity from its owner's
+        profile, with its own avatar, bio, species, breed, and follower graph.
+  \item \textbf{Privacy by design.} Both an owner account and an individual pet profile
+        can independently be marked anonymous, hiding the owner's real name and avatar
+        from public view while keeping the account fully functional (moderation and
+        messaging still resolve to the real account internally).
+  \item \textbf{Utility beyond the feed.} Health logs, lost-and-found alerts, adoption
+        listings, veterinary booking, and a marketplace are built directly into the
+        product rather than left to third-party apps.
+  \item \textbf{Community structure.} Posts and pets are organised into breed- and
+        species-based communities, discoverable independently of the follow graph.
+\end{enumerate}
+
+\section{Feature Summary}
+The table below summarises the major functional areas implemented in the current
+version of the product. Each is described in full in the companion
+\emph{Feature Specification} document.
+
+\begin{longtable}{@{}p{4.5cm}p{9.5cm}@{}}
+\toprule
+\textbf{Area} & \textbf{Summary} \\
+\midrule
+\endhead
+Authentication & Email/password sign-up and login via Supabase Auth, with optional
+  email confirmation. \\
+Pet \& owner profiles & Independent profiles for pets and owners, each editable, each
+  with an avatar upload and an anonymity toggle. \\
+Posts \& feed & Photo posts authored as the owner or as one of their pets, with likes
+  and comments, and a follow-scoped home feed. \\
+Follow graph & Owners follow other owners; the home feed and notifications are scoped
+  to this graph. \\
+Communities & Automatic grouping of pets and posts by species and breed. \\
+Lost \& Found & Owners can report a lost or found pet with a description, optional
+  photo association, and contact details. \\
+Health logs & Private, owner-only medical history per pet (vaccinations, vet visits,
+  medication, reminders). \\
+Notifications & In-app notifications for likes, comments, and new followers. \\
+Direct messages & One-to-one conversations between owners, integrated as the contact
+  method for adoption and marketplace listings. \\
+Pet adoption & Shelters and individual owners can list adoptable pets, browsable and
+  filterable by species. \\
+Veterinary booking & A directory of veterinary clinics with real slot-based appointment
+  booking (no double-booking, no booking in the past). \\
+Marketplace & Peer-to-peer buying and selling of pet products, filterable by category. \\
+\bottomrule
+\end{longtable}
+
+\section{Document Set}
+This overview is one of a set of documents describing PetSocial:
+\begin{enumerate}[leftmargin=*]
+  \item \emph{Project Overview} (this document)
+  \item \emph{System Architecture}
+  \item \emph{Database Design}
+  \item \emph{Feature Specification}
+  \item \emph{API and Server Actions Reference}
+  \item \emph{Deployment Guide}
+  \item \emph{User Guide}
+  \item \emph{Security and Privacy}
+\end{enumerate}
+
+\end{document}

@@ -1,0 +1,314 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{PetSocial --- Database Design}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newcommand{\modeltable}[1]{%
+  \begin{tabular}{@{}p{3.3cm}p{2.6cm}p{8.3cm}@{}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Notes} \\
+  \midrule
+  #1
+  \bottomrule
+  \end{tabular}
+}
+
+\title{PetSocial\\\large Database Design}
+\author{PetSocial Development Documentation}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+\tableofcontents
+
+\section{Overview}
+PetSocial uses a single PostgreSQL database, accessed exclusively through the Prisma
+ORM. The schema lives in \texttt{prisma/schema.prisma} and is the single source of
+truth for the data model; every table in the database was created by an applied Prisma
+migration under \texttt{prisma/migrations/}. There are sixteen models in total, grouped
+below by functional area.
+
+\section{Identity}
+
+\subsection{Owner}
+Represents a human user account. Its primary key is the same UUID that Supabase Auth
+assigns to the corresponding row in \texttt{auth.users}, so an \texttt{Owner} row is
+created immediately after a successful sign-up and is never independently generated.
+
+\modeltable{
+id & String (PK) & Matches the Supabase Auth user id. \\
+email & String & Unique. \\
+username & String & Unique; used in profile URLs. \\
+displayName & String & Public name, hidden from display when \texttt{isAnonymous} is
+  true. \\
+avatarUrl & String? & Public URL of the uploaded avatar image, or null for an
+  initials-based placeholder. \\
+bio & String? & Free-text biography. \\
+isAnonymous & Boolean & Hides the owner's real name and avatar everywhere in the
+  product; the underlying account is unaffected for moderation and messaging purposes.
+  Default \texttt{false}. \\
+isPrivate & Boolean & Reserved for a future private-account feature; not yet enforced
+  anywhere in the application. Default \texttt{false}. \\
+createdAt / updatedAt & DateTime & Standard timestamps. \\
+}
+
+\subsection{Pet}
+Represents an individual pet. A pet belongs to exactly one owner but is a distinct
+public identity: it has its own name, species, breed, avatar, bio, and posts, and its
+own independent anonymity flag.
+
+\modeltable{
+id & String (PK) & \\
+ownerId & String (FK $\to$ Owner) & Cascade delete. \\
+name & String & \\
+species & String & Free text (e.g.\ ``Dog'', ``Cat''); used to group pets into
+  communities. \\
+breed & String? & Free text; used as a secondary filter within a species community. \\
+bio & String? & \\
+birthDate & DateTime? & Not currently surfaced in any page; reserved for a future age
+  display. \\
+avatarUrl & String? & \\
+isAnonymous & Boolean & Hides the \emph{owner's} identity wherever this specific pet is
+  shown, independent of the owner's own \texttt{isAnonymous} flag. Default
+  \texttt{false}. \\
+createdAt / updatedAt & DateTime & \\
+}
+
+\paragraph{Anonymity resolution.} Whether an owner's identity is hidden next to a given
+pet or post is computed as
+$\texttt{isHidden} = \texttt{pet.isAnonymous} \lor \texttt{owner.isAnonymous}$,
+implemented once in \texttt{src/lib/visibility.ts} and reused by every page that
+displays authorship.
+
+\section{Social Graph and Content}
+
+\subsection{Post}
+\modeltable{
+id & String (PK) & \\
+ownerId & String (FK $\to$ Owner) & The authoring account. Cascade delete. \\
+petId & String? (FK $\to$ Pet) & Optional; set when the post is authored ``as'' one of
+  the owner's pets. On pet deletion the field is set to null (\texttt{SetNull}), not
+  cascaded, so the post survives. \\
+caption & String? & \\
+mediaUrls & String[] & Currently holds at most one URL in practice (the UI only
+  supports a single photo per post), stored as an array for forward compatibility. \\
+createdAt / updatedAt & DateTime & \\
+}
+
+\subsection{Comment}
+\modeltable{
+id & String (PK) & \\
+postId & String (FK $\to$ Post) & Cascade delete. \\
+ownerId & String (FK $\to$ Owner) & Cascade delete. \\
+body & String & \\
+createdAt & DateTime & \\
+}
+
+\subsection{Like}
+\modeltable{
+id & String (PK) & \\
+postId & String (FK $\to$ Post) & Cascade delete. \\
+ownerId & String (FK $\to$ Owner) & Cascade delete. \\
+createdAt & DateTime & \\
+}
+A unique constraint on \texttt{(postId, ownerId)} enforces at most one like per owner
+per post at the database level, independent of any application-level check.
+
+\subsection{Follow}
+\modeltable{
+id & String (PK) & \\
+followerId & String (FK $\to$ Owner) & The owner doing the following. \\
+followingId & String (FK $\to$ Owner) & The owner being followed. \\
+createdAt & DateTime & \\
+}
+A unique constraint on \texttt{(followerId, followingId)} prevents duplicate follow
+edges. The home feed query filters posts to
+\texttt{ownerId IN (currentUser, ...following)}.
+
+\subsection{Hashtag and HashtagsOnPosts}
+A conventional many-to-many join between \texttt{Post} and a \texttt{Hashtag} table
+(\texttt{tag} is unique). \textbf{These two models are defined in the schema but not
+yet used by any page or Server Action} --- no code currently extracts hashtags from a
+caption or writes to either table. They are documented here for completeness and as a
+known gap; see the Feature Specification document, \S~``Not Yet Implemented''.
+
+\section{Messaging and Notifications}
+
+\subsection{Message}
+\modeltable{
+id & String (PK) & \\
+senderId & String (FK $\to$ Owner) & \\
+receiverId & String (FK $\to$ Owner) & \\
+body & String & \\
+readAt & DateTime? & Null until the receiver opens the conversation, at which point it
+  is set for every unread message from that sender in a single \texttt{updateMany}. \\
+createdAt & DateTime & \\
+}
+
+\subsection{Notification}
+\modeltable{
+id & String (PK) & \\
+ownerId & String (FK $\to$ Owner) & The recipient. \\
+type & String & One of \texttt{"like"}, \texttt{"comment"}, \texttt{"follow"}. \\
+message & String & Pre-rendered human-readable text, e.g.\ ``Alice liked your post.'' \\
+isRead & Boolean & Default \texttt{false}. \\
+createdAt & DateTime & \\
+}
+Notifications are never generated for a user's own actions on their own content (an
+owner liking their own post does not notify them).
+
+\section{Pet Care}
+
+\subsection{HealthLog}
+\modeltable{
+id & String (PK) & \\
+petId & String (FK $\to$ Pet) & Cascade delete. \\
+type & String & One of \texttt{"vaccination"}, \texttt{"vet\_visit"},
+  \texttt{"medication"}, \texttt{"other"}. \\
+title & String & \\
+notes & String? & \\
+date & DateTime & The date of the recorded event. \\
+reminderAt & DateTime? & Optional follow-up reminder date. \\
+createdAt & DateTime & \\
+}
+Health logs are only ever queried when the viewer is the pet's own owner; the query
+itself is gated (\S~``Owner-Only Data'' in the Security and Privacy document), not just
+hidden in the UI.
+
+\subsection{LostFoundPost}
+\modeltable{
+id & String (PK) & \\
+ownerId & String (FK $\to$ Owner) & Cascade delete. \\
+petId & String? (FK $\to$ Pet) & Optional link to one of the owner's own pets. \\
+status & String & \texttt{"lost"} or \texttt{"found"}. Default \texttt{"lost"}. \\
+description & String & \\
+lastSeenLat / lastSeenLng & Float? & Reserved for a future map view; not currently
+  collected by the report form. \\
+contactInfo & String? & \\
+createdAt & DateTime & \\
+resolvedAt & DateTime? & Set when the owner marks the report resolved; resolved
+  reports are excluded from the active listing. \\
+}
+
+\subsection{Vet}
+\modeltable{
+id & String (PK) & \\
+name & String & Veterinarian's name. \\
+clinicName & String & \\
+location & String? & Free-text distance/address string. \\
+bio & String? & \\
+avatarUrl & String? & \\
+rating & Float & Default \texttt{4.8}. \\
+createdAt & DateTime & \\
+}
+The table self-seeds with three demonstration clinics the first time
+\texttt{/vet} is loaded and finds it empty (\texttt{src/lib/vet-seed.ts}); there is no
+vet sign-up flow.
+
+\subsection{Appointment}
+\modeltable{
+id & String (PK) & \\
+ownerId & String (FK $\to$ Owner) & Cascade delete. \\
+petId & String (FK $\to$ Pet) & Cascade delete. \\
+vetId & String (FK $\to$ Vet) & Cascade delete. \\
+reason & String & Free text, chosen from a fixed list in the booking form. \\
+scheduledAt & DateTime & The exact appointment instant. \\
+status & String & \texttt{"confirmed"}, \texttt{"cancelled"}, or \texttt{"completed"}
+  (the last is defined but never set by any current code path). Default
+  \texttt{"confirmed"}. \\
+notes & String? & \\
+createdAt & DateTime & \\
+}
+Availability is computed, not stored: a fixed list of eight daily time slots is
+filtered against existing \texttt{"confirmed"} appointments for the same vet and date,
+and against the current time (already-passed slots on the current day are excluded).
+
+\section{Commerce}
+
+\subsection{AdoptionListing}
+\modeltable{
+id & String (PK) & \\
+posterId & String (FK $\to$ Owner) & Cascade delete. \\
+name & String & The pet's name. \\
+species / breed / age / gender & String / String? / String? / String? & \texttt{species}
+  is required; the rest are optional free text. \\
+description & String & \\
+mediaUrls & String[] & At most one photo in practice. \\
+location / contactInfo & String? / String? & \\
+status & String & \texttt{"available"}, \texttt{"pending"}, or \texttt{"adopted"}.
+  Default \texttt{"available"}. \\
+createdAt / updatedAt & DateTime & \\
+}
+The browse page excludes \texttt{"adopted"} listings from the active list entirely
+(they remain in the database and reachable by direct link, but do not appear in
+\texttt{/adoption}).
+
+\subsection{MarketplaceListing}
+\modeltable{
+id & String (PK) & \\
+sellerId & String (FK $\to$ Owner) & Cascade delete. \\
+title & String & \\
+category & String & One of \texttt{"food"}, \texttt{"toys"}, \texttt{"beds"},
+  \texttt{"health"}, \texttt{"accessories"}, \texttt{"other"}. \\
+price & Float & In whole currency units (e.g.\ dollars), not cents. \\
+description & String & \\
+mediaUrls & String[] & \\
+location & String? & \\
+status & String & \texttt{"available"} or \texttt{"sold"}. Default
+  \texttt{"available"}. \\
+createdAt / updatedAt & DateTime & \\
+}
+Unlike an adopted pet, a sold marketplace listing is \emph{not} hidden from
+\texttt{/marketplace}: it remains visible with a ``Sold'' badge, since a marketplace
+listing's history is treated as useful browsing context rather than something to hide.
+
+\section{Entity Relationship Summary}
+\begin{longtable}{@{}p{4.2cm}p{3.4cm}p{5.8cm}@{}}
+\toprule
+\textbf{Relationship} & \textbf{Cardinality} & \textbf{On Delete} \\
+\midrule
+\endhead
+Owner $\to$ Pet & 1 -- N & Cascade \\
+Owner $\to$ Post & 1 -- N & Cascade \\
+Pet $\to$ Post & 1 -- N (optional) & SetNull \\
+Post $\to$ Comment & 1 -- N & Cascade \\
+Post $\to$ Like & 1 -- N & Cascade \\
+Owner $\to$ Follow (as follower) & 1 -- N & Cascade \\
+Owner $\to$ Follow (as following) & 1 -- N & Cascade \\
+Post $\leftrightarrow$ Hashtag & N -- N (via HashtagsOnPosts) & Cascade \\
+Owner $\to$ Message (as sender) & 1 -- N & Cascade \\
+Owner $\to$ Message (as receiver) & 1 -- N & Cascade \\
+Owner $\to$ Notification & 1 -- N & Cascade \\
+Pet $\to$ HealthLog & 1 -- N & Cascade \\
+Owner $\to$ LostFoundPost & 1 -- N & Cascade \\
+Pet $\to$ LostFoundPost & 1 -- N (optional) & SetNull \\
+Owner $\to$ AdoptionListing & 1 -- N & Cascade \\
+Owner $\to$ Appointment & 1 -- N & Cascade \\
+Pet $\to$ Appointment & 1 -- N & Cascade \\
+Vet $\to$ Appointment & 1 -- N & Cascade \\
+Owner $\to$ MarketplaceListing & 1 -- N & Cascade \\
+\bottomrule
+\end{longtable}
+
+\end{document}

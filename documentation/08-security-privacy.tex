@@ -1,0 +1,176 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+\definecolor{codebg}{RGB}{244,244,244}
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  showstringspaces=false
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{PetSocial --- Security and Privacy}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\title{PetSocial\\\large Security and Privacy}
+\author{PetSocial Development Documentation}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+\tableofcontents
+
+\section{Authentication}
+Authentication is delegated entirely to Supabase Auth. Sessions are stored as
+cookies and read through three context-specific Supabase client constructors (browser,
+server, middleware --- see the System Architecture document). A Next.js middleware
+runs on every request purely to refresh a session that is close to expiring, so that a
+Server Component never has to handle an expired-but-refreshable token itself.
+
+No page or Server Action ever trusts a user identifier passed from the client. Every
+authenticated action re-derives the caller's identity server-side by calling
+\texttt{requireUser()} (\texttt{src/lib/auth.ts}), which reads the session from cookies
+and redirects to \texttt{/login} if none is present:
+\begin{lstlisting}
+export async function requireUser() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  return user;
+}
+\end{lstlisting}
+
+\section{Authorisation}
+Beyond ``is someone logged in,'' every action that mutates a specific resource
+independently verifies that the resource belongs to the caller before proceeding ---
+ownership is never assumed from a form field. For example, updating a pet's profile
+looks up the pet scoped to both its id \emph{and} the caller's id in a single query:
+\begin{lstlisting}
+const pet = await prisma.pet.findFirst({
+  where: { id: petId, ownerId: user.id },
+});
+if (!pet) return { error: "..." };
+\end{lstlisting}
+The same pattern is used for editing a pet, updating an adoption or marketplace
+listing's status, cancelling a vet appointment, and resolving a lost-and-found report.
+
+\section{Input Validation}
+Every Server Action that accepts user input parses it through a Zod schema before
+touching the database, with explicit length limits on every text field (documented
+per-action in the API Reference). This serves two purposes: rejecting malformed input
+with a clear error message, and preventing unbounded-length text from being written to
+the database, which both bounds storage growth and reduces the attack surface for
+downstream rendering.
+
+\section{Rate Limiting}
+Every mutating action is rate-limited per authenticated user (or, for the unauthenticated
+sign-up action, per client IP address), using an in-process, in-memory sliding-window
+counter (\texttt{src/lib/rate-limit.ts}). This is a deliberate simplification: it is
+correct and effective for a single running server instance, but has two consequences
+worth tracking as the deployment scales:
+\begin{itemize}[leftmargin=*]
+  \item Multiple concurrent serverless instances each hold independent counters, so the
+        effective limit scales with instance count rather than staying fixed.
+  \item Counters reset on every cold start or redeploy.
+\end{itemize}
+Before relying on these limits under real adversarial load, replace the backing store
+with a shared one (e.g.\ Upstash Redis) behind the same function signature.
+
+\section{The Anonymity Model}
+An owner account and each individual pet profile carry independent
+\texttt{isAnonymous} flags. Setting either hides the owner's real display name and
+avatar from \emph{public display} --- it never removes or anonymises the underlying
+account record, and it never prevents moderation or direct messaging, both of which
+continue to resolve to the real account internally. The resolution rule is centralised
+in one function, reused by every page that renders authorship, rather than
+reimplemented per page:
+\begin{lstlisting}
+export function isHidden(entity, owner) {
+  return Boolean(entity?.isAnonymous) || owner.isAnonymous;
+}
+\end{lstlisting}
+Centralising this logic matters for correctness: before this refactor, several pages
+independently implemented the same check with slightly different logic, which is
+exactly the kind of drift that produces a page which forgets to hide an anonymous
+owner's name.
+
+\section{Owner-Only Data}
+A pet's health log is the one class of data in the product that is private rather than
+merely de-identified. It is never fetched at all when the requesting user is not the
+pet's own owner --- the guard is on the database query itself, not on whether the
+already-fetched data is rendered:
+\begin{lstlisting}
+const healthLogs = isOwner
+  ? await prisma.healthLog.findMany({ where: { petId: pet.id } })
+  : [];
+\end{lstlisting}
+This means a health log can never leak through a client-side rendering bug, a cache, or
+a debugging tool inspecting the page's data, because it is simply never present in the
+response in the first place for a non-owner viewer.
+
+\section{File Upload Security}
+User photo uploads go directly from the browser to Supabase Storage (not proxied
+through the Next.js server), into a single public bucket, \texttt{post-media}, with two
+Row-Level Security policies:
+\begin{itemize}[leftmargin=*]
+  \item Only authenticated users may insert new objects.
+  \item Anyone may read any object (the bucket is intentionally public, since post
+        photos and avatars are public content by nature).
+\end{itemize}
+There is currently no server-side validation of uploaded file type, size, or content
+beyond what the browser's \texttt{accept="image/*"} hint encourages; a determined
+authenticated user could upload a non-image file to the bucket. This is a known gap,
+acceptable for the current product stage but worth closing (server-side content-type
+and size checks) before handling untrusted public traffic at scale.
+
+\section{Secrets Management}
+\begin{itemize}[leftmargin=*]
+  \item Database connection strings and Supabase API keys live only in \texttt{.env}
+        and \texttt{.env.local}, both git-ignored; only \texttt{.env.example} (with
+        placeholder values) is committed.
+  \item Database credentials should be rotated any time they are known to have been
+        shared outside of the Supabase dashboard or a properly access-controlled
+        secrets manager --- for instance, after being pasted into a chat transcript,
+        a support ticket, or any other non-durable channel, even if that channel is
+        believed private.
+  \item The publishable Supabase key (\texttt{NEXT\_PUBLIC\_SUPABASE\_PUBLISHABLE\_KEY})
+        is, by design, safe to expose to the browser; it authorises only what the
+        project's Row-Level Security policies allow.
+\end{itemize}
+
+\section{Known Limitations}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{No automated test suite.} Every feature described in this document set
+        was verified through disposable, manually-run scripts exercising the real
+        application and database during development, not through a committed,
+        repeatable test suite. Regressions currently rely on manual re-verification.
+  \item \textbf{In-memory rate limiting}, as discussed in \S~4.
+  \item \textbf{No server-side file validation}, as discussed in \S~7.
+  \item \texttt{Owner.isPrivate} exists in the schema but is not enforced anywhere ---
+        it does not currently make an account private in any functional sense.
+\end{itemize}
+
+\end{document}

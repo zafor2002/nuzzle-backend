@@ -1,0 +1,289 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{PetSocial --- API and Server Actions Reference}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newcommand{\actiontable}[1]{%
+  \begin{tabular}{@{}p{2.6cm}p{10.9cm}@{}}
+  #1
+  \end{tabular}
+}
+
+\title{PetSocial\\\large API and Server Actions Reference}
+\author{PetSocial Development Documentation}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+\tableofcontents
+
+\section{Conventions}
+PetSocial has no separate REST or GraphQL API; all mutations are Next.js
+\textbf{Server Actions} --- plain async functions marked \texttt{"use server"} and
+called either as a form's \texttt{action} or directly from a Client Component inside
+\texttt{useTransition}. Every action documented below follows the same shape:
+
+\begin{enumerate}[leftmargin=*]
+  \item Resolve and require the current user via \texttt{requireUser()}, which
+        redirects to \texttt{/login} if there is no session.
+  \item Check a per-user rate limit via \texttt{rateLimit(key, limit, windowMs)}.
+  \item Parse and validate input with a Zod schema built from the submitted
+        \texttt{FormData}.
+  \item Perform authorisation checks specific to the action (e.g.\ ``this pet belongs
+        to the caller'').
+  \item Apply the change via Prisma, then call \texttt{revalidatePath()} for every
+        route the change affects.
+\end{enumerate}
+
+Actions that create a new resource end with \texttt{redirect()} to that resource's
+page. Actions invoked from a button (likes, follows, status toggles) instead return an
+optional \texttt{\{ error: string \}} and rely on \texttt{revalidatePath} plus Next.js's
+automatic action-triggered refresh to update the calling page.
+
+The one route handler in the application that is \emph{not} a Server Action is
+\texttt{src/app/auth/callback/route.ts}, a conventional Next.js Route Handler that
+exchanges a Supabase email-confirmation code for a session.
+
+\section{Authentication --- \texttt{actions/auth.ts}}
+
+\subsection{signup(formData)}
+\actiontable{
+Rate limit & 5 per hour, keyed by client IP. \\
+Validation & \texttt{email} (valid email), \texttt{password} (6--72 chars),
+  \texttt{username} (3--30 chars, lowercase letters/digits/underscore only),
+  \texttt{displayName} (1--100 chars). \\
+Behaviour & Rejects if the username is already taken. Calls Supabase
+  \texttt{auth.signUp()}, then creates the corresponding \texttt{Owner} row using the
+  new Supabase user id as its primary key. Redirects to \texttt{/signup/check-email} if
+  no session was returned (email confirmation required) or to \texttt{/} otherwise. \\
+}
+
+\subsection{login(formData)}
+\actiontable{
+Rate limit & 8 per 5 minutes, keyed by the submitted email. \\
+Validation & \texttt{email} (valid email), \texttt{password} (non-empty, up to 72
+  chars). \\
+Behaviour & Calls Supabase \texttt{auth.signInWithPassword()}; redirects to \texttt{/}
+  on success. \\
+}
+
+\subsection{logout()}
+\actiontable{
+Behaviour & Calls Supabase \texttt{auth.signOut()} and redirects to \texttt{/login}. \\
+}
+
+\section{Profile Management --- \texttt{actions/profile.ts}}
+
+\subsection{updateOwnerProfile(formData)}
+\actiontable{
+Rate limit & 20 per hour, keyed by user id. \\
+Validation & \texttt{displayName} (1--100 chars), \texttt{bio} (up to 500 chars,
+  optional), \texttt{avatarUrl} (valid URL, optional), \texttt{isAnonymous}
+  (checkbox). \\
+Behaviour & Updates the caller's own \texttt{Owner} row. \texttt{avatarUrl} is only
+  written if a new upload occurred (an empty value leaves the existing avatar
+  untouched). Redirects to the owner's own profile. \\
+}
+
+\subsection{updatePet(petId, formData)}
+\actiontable{
+Auth & Verifies \texttt{petId} belongs to the caller before any validation runs. \\
+Rate limit & 30 per hour, keyed by user id. \\
+Validation & \texttt{name}/\texttt{species} (1--60 chars), \texttt{breed} (up to 60
+  chars, optional), \texttt{bio} (up to 500 chars, optional), \texttt{avatarUrl} (valid
+  URL, optional), \texttt{isAnonymous} (checkbox). \\
+Behaviour & Updates the pet row; redirects to the pet's profile. \\
+}
+
+\section{Pets --- \texttt{actions/pets.ts}}
+
+\subsection{createPet(formData)}
+\actiontable{
+Rate limit & 10 per hour, keyed by user id. \\
+Validation & \texttt{name}/\texttt{species} (1--60 chars), \texttt{breed} (up to 60
+  chars, optional), \texttt{bio} (up to 500 chars, optional), \texttt{isAnonymous}
+  (checkbox). \\
+Behaviour & Creates a \texttt{Pet} owned by the caller; redirects to its profile page. \\
+}
+
+\section{Posts --- \texttt{actions/posts.ts}}
+
+\subsection{createPost(formData)}
+\actiontable{
+Rate limit & 20 per hour, keyed by user id. \\
+Validation & At least one of \texttt{caption} (up to 2000 chars) or \texttt{mediaUrl}
+  (valid URL) must be present; \texttt{petId} optional. \\
+Behaviour & If \texttt{petId} is supplied, verifies it belongs to the caller before
+  creating the post. Redirects to \texttt{/feed}. \\
+}
+
+\section{Engagement --- \texttt{actions/engagement.ts}}
+
+\subsection{toggleLike(postId)}
+\actiontable{
+Rate limit & 60 per minute, keyed by user id. \\
+Behaviour & Toggles a \texttt{Like} row for the caller on the given post (the unique
+  \texttt{(postId, ownerId)} database constraint makes double-liking impossible even
+  under a race). Sends a ``liked your post'' notification to the post's owner on the
+  like transition only, and never when the caller is the post's own owner. \\
+}
+
+\subsection{addComment(postId, formData)}
+\actiontable{
+Rate limit & 20 per minute, keyed by user id. \\
+Validation & \texttt{body}, 1--1000 chars. \\
+Behaviour & Creates a \texttt{Comment}; sends a ``commented on your post'' notification
+  to the post's owner (never to self). \\
+}
+
+\section{Follows --- \texttt{actions/follows.ts}}
+
+\subsection{toggleFollow(targetOwnerId)}
+\actiontable{
+Rate limit & 60 per minute, keyed by user id. \\
+Behaviour & No-ops if \texttt{targetOwnerId} equals the caller's own id. Toggles a
+  \texttt{Follow} edge (unique on \texttt{(followerId, followingId)}); sends a
+  ``started following you'' notification on the follow transition only. \\
+}
+
+\section{Health Logs --- \texttt{actions/health.ts}}
+
+\subsection{createHealthLog(petId, formData)}
+\actiontable{
+Auth & Verifies \texttt{petId} belongs to the caller. \\
+Rate limit & 30 per hour, keyed by user id. \\
+Validation & \texttt{type} (one of vaccination / vet\_visit / medication / other),
+  \texttt{title} (1--120 chars), \texttt{notes} (up to 1000 chars, optional),
+  \texttt{date} (coerced to a Date), \texttt{reminderAt} (coerced to a Date,
+  optional). \\
+Behaviour & Creates a \texttt{HealthLog}; redirects to the pet's profile. \\
+}
+
+\section{Lost \& Found --- \texttt{actions/lost-found.ts}}
+
+\subsection{createLostFoundPost(formData)}
+\actiontable{
+Rate limit & 10 per hour, keyed by user id. \\
+Validation & \texttt{status} (lost / found), \texttt{petId} (optional, verified to
+  belong to the caller if present), \texttt{description} (1--2000 chars),
+  \texttt{contactInfo} (up to 200 chars, optional). \\
+Behaviour & Creates a \texttt{LostFoundPost}; redirects to \texttt{/lost-found}. \\
+}
+
+\subsection{markResolved(id)}
+\actiontable{
+Auth & Verifies the report belongs to the caller (silently no-ops otherwise). \\
+Behaviour & Sets \texttt{resolvedAt} to now, removing the report from the active
+  listing. \\
+}
+
+\section{Notifications --- \texttt{actions/notifications.ts}}
+
+\subsection{markAllRead()}
+\actiontable{
+Behaviour & Sets \texttt{isRead = true} on every unread notification belonging to the
+  caller. \\
+}
+
+\section{Messages --- \texttt{actions/messages.ts}}
+
+\subsection{sendMessage(receiverId, formData)}
+\actiontable{
+Rate limit & 40 per minute, keyed by user id. \\
+Validation & \texttt{body}, 1--1000 chars; rejects sending to oneself; rejects if
+  \texttt{receiverId} does not correspond to an existing owner. \\
+Behaviour & Creates a \texttt{Message}. Marking messages read happens separately, as a
+  direct database write in the thread page itself when it is opened (not through this
+  action). \\
+}
+
+\section{Adoption --- \texttt{actions/adoption.ts}}
+
+\subsection{createAdoptionListing(formData)}
+\actiontable{
+Rate limit & 10 per hour, keyed by user id. \\
+Validation & \texttt{name}/\texttt{species} (1--60 chars), \texttt{breed} (up to 60,
+  optional), \texttt{age} (up to 40, optional), \texttt{gender} (male / female /
+  unknown, optional), \texttt{description} (1--2000 chars), \texttt{mediaUrl} (valid
+  URL, optional), \texttt{location} (up to 120, optional), \texttt{contactInfo} (up to
+  200, optional). \\
+Behaviour & Creates an \texttt{AdoptionListing} owned by the caller; redirects to its
+  detail page. \\
+}
+
+\subsection{updateListingStatus(id, status)}
+\actiontable{
+Auth & Verifies the listing belongs to the caller. \\
+Validation & \texttt{status} must be one of available / pending / adopted. \\
+Behaviour & Updates the listing's status in place. \\
+}
+
+\section{Veterinary Booking --- \texttt{actions/vet.ts}}
+
+\subsection{bookAppointment(vetId, formData)}
+\actiontable{
+Rate limit & 10 per hour, keyed by user id. \\
+Validation & \texttt{petId} (non-empty, verified to belong to the caller),
+  \texttt{reason} (1--120 chars), \texttt{notes} (up to 1000, optional), \texttt{date}
+  (\texttt{YYYY-MM-DD}), \texttt{time} (\texttt{HH:MM}). \\
+Behaviour & Verifies the vet exists, that the combined date/time is in the future, and
+  that no \texttt{"confirmed"} appointment already occupies that exact vet/time slot,
+  before creating the \texttt{Appointment}. Redirects to
+  \texttt{/vet/appointments}. \\
+}
+
+\subsection{cancelAppointment(id)}
+\actiontable{
+Auth & Verifies the appointment belongs to the caller. \\
+Behaviour & Sets \texttt{status = "cancelled"}, freeing the slot for other bookings. \\
+}
+
+\section{Marketplace --- \texttt{actions/marketplace.ts}}
+
+\subsection{createMarketplaceListing(formData)}
+\actiontable{
+Rate limit & 10 per hour, keyed by user id. \\
+Validation & \texttt{title} (1--100 chars), \texttt{category} (one of the six fixed
+  categories), \texttt{price} (coerced number, 0--100000), \texttt{description}
+  (1--2000 chars), \texttt{mediaUrl} (valid URL, optional), \texttt{location} (up to
+  120, optional). \\
+Behaviour & Creates a \texttt{MarketplaceListing}; redirects to its detail page. \\
+}
+
+\subsection{toggleListingSold(id)}
+\actiontable{
+Auth & Verifies the listing belongs to the caller. \\
+Behaviour & Flips status between \texttt{available} and \texttt{sold}. \\
+}
+
+\section{Route Handler --- \texttt{app/auth/callback/route.ts}}
+\actiontable{
+Method & \texttt{GET} \\
+Purpose & Exchanges the \texttt{code} query parameter (from a Supabase email
+  confirmation link) for a session via \texttt{exchangeCodeForSession()}, then redirects
+  to the \texttt{next} query parameter or \texttt{/} on success, or to \texttt{/login}
+  on failure. \\
+}
+
+\end{document}

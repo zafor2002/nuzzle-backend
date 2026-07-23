@@ -1,0 +1,225 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{PetSocial --- Feature Specification}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\title{PetSocial\\\large Feature Specification}
+\author{PetSocial Development Documentation}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+\tableofcontents
+
+\section{Authentication}
+\subsection{Sign up}
+\begin{itemize}[leftmargin=*]
+  \item Route: \texttt{/signup}. Fields: display name, username, email, password.
+  \item Username is normalised to lowercase and checked for uniqueness against the
+        \texttt{Owner} table before Supabase Auth account creation is attempted.
+  \item If Supabase's email confirmation is enabled, the new account has no session and
+        the user is redirected to \texttt{/signup/check-email}; if confirmation is
+        disabled, the user is signed in immediately and redirected home.
+  \item An \texttt{Owner} row is created in the same request, using the Supabase Auth
+        user id as its primary key.
+\end{itemize}
+
+\subsection{Log in / Log out}
+\begin{itemize}[leftmargin=*]
+  \item Route: \texttt{/login}. Email and password only (no social login is currently
+        wired up, though the UI groundwork for a Google button was scaffolded in an
+        early design pass and never connected).
+  \item Log out is a single Server Action that calls Supabase's \texttt{signOut()} and
+        redirects to \texttt{/login}.
+\end{itemize}
+
+\section{Owner and Pet Profiles}
+\subsection{Owner profile}
+\begin{itemize}[leftmargin=*]
+  \item Route: \texttt{/owners/[username]}.
+  \item Displays display name (or ``Anonymous''), bio, follower/following counts, and a
+        list of the owner's pets.
+  \item Shows a \emph{Follow} button to any other signed-in visitor, and an
+        \emph{Edit profile} button to the profile's own owner.
+  \item Editing (\texttt{/owners/[username]/edit}) covers display name, bio, avatar
+        upload, and the anonymity toggle.
+\end{itemize}
+
+\subsection{Pet profile}
+\begin{itemize}[leftmargin=*]
+  \item Route: \texttt{/pets/[id]}.
+  \item Displays name, species, breed, bio, and the owner (or ``Managed by an anonymous
+        owner'' if hidden).
+  \item The pet's own owner additionally sees an \emph{Edit} button and, in a
+        separate section on the same page, the pet's health log with an
+        \emph{Add entry} action.
+  \item Editing (\texttt{/pets/[id]/edit}) covers name, species, breed, bio, avatar
+        upload, and the pet-level anonymity toggle.
+\end{itemize}
+
+\section{Posts and the Home Feed}
+\begin{itemize}[leftmargin=*]
+  \item Creating a post (\texttt{/posts/new}) requires a caption, a photo, or both. The
+        post can optionally be attributed to one of the owner's own pets instead of the
+        owner directly.
+  \item The home feed (\texttt{/feed}) shows posts from the signed-in user and everyone
+        they follow, newest first. A logged-out visitor sees a global feed of all posts
+        instead.
+  \item Each post supports a single like per owner (toggleable) and an unlimited number
+        of comments.
+  \item Post authorship display resolves through the anonymity rule described in the
+        Database Design document: if the post is attributed to a pet, the pet's own
+        \texttt{isAnonymous} flag \emph{or} the owner's flag hides the owner's name.
+\end{itemize}
+
+\section{Follows}
+A follow is a directed edge from one owner to another. Following/unfollowing is a
+single toggle action available from an owner's profile, the Explore page, and the
+right-hand ``Who to follow'' panel on desktop. The home feed and (implicitly) the
+notification stream are the only two features currently scoped by the follow graph.
+
+\section{Communities}
+\begin{itemize}[leftmargin=*]
+  \item \texttt{/communities} lists every distinct species that has at least one pet,
+        with a pet count for each.
+  \item \texttt{/communities/[species]} lists that species' pets and its most recent
+        posts, and offers a further filter by breed (via a query parameter, e.g.\
+        \texttt{?breed=Corgi}).
+  \item Communities are computed on the fly from existing \texttt{Pet.species} /
+        \texttt{Pet.breed} values --- there is no separate ``community'' table to
+        create or join.
+\end{itemize}
+
+\section{Lost \& Found}
+\begin{itemize}[leftmargin=*]
+  \item Route: \texttt{/lost-found} (list), \texttt{/lost-found/new} (report).
+  \item A report has a status of either \texttt{lost} or \texttt{found}, a description,
+        optional contact info, and an optional link to one of the reporter's own pets.
+  \item The list page shows only unresolved reports. The reporting owner can mark their
+        own report resolved, at which point it disappears from the active list (the row
+        is kept, not deleted).
+\end{itemize}
+
+\section{Health Logs}
+\begin{itemize}[leftmargin=*]
+  \item Accessible only from a pet's own profile page, only to that pet's owner.
+  \item An entry has a type (vaccination, vet visit, medication, or other), a title, an
+        optional note, a date, and an optional reminder date.
+  \item Health log data is never fetched at all when the viewer is not the pet's owner
+        --- the visibility rule is enforced at the query level, not just hidden in the
+        rendered page.
+\end{itemize}
+
+\section{Notifications}
+\begin{itemize}[leftmargin=*]
+  \item Route: \texttt{/notifications}.
+  \item Generated for three events: someone liking your post, someone commenting on
+        your post, and someone starting to follow you. An owner's own actions on their
+        own content never generate a notification.
+  \item The actor's name in a notification message respects that actor's own anonymity
+        flag, showing ``Someone'' instead of their real name when appropriate.
+  \item A ``Mark all read'' action is available whenever at least one notification is
+        unread. The unread count also appears as a badge on the notification icon in
+        the navigation.
+\end{itemize}
+
+\section{Direct Messages}
+\begin{itemize}[leftmargin=*]
+  \item Routes: \texttt{/messages} (conversation list), \texttt{/messages/[username]}
+        (a single thread).
+  \item The conversation list groups all of a user's messages by the other party,
+        showing the most recent message and an unread count per conversation.
+  \item Opening a thread marks every unread message \emph{from that specific sender} as
+        read; messages in other conversations are unaffected.
+  \item Direct messages are also the contact mechanism for both Adoption and
+        Marketplace listings: a ``Message about \emph{item}'' button on a listing's
+        detail page opens a thread with that listing's poster.
+\end{itemize}
+
+\section{Pet Adoption}
+\begin{itemize}[leftmargin=*]
+  \item Routes: \texttt{/adoption} (browse), \texttt{/adoption/new} (post a listing),
+        \texttt{/adoption/[id]} (detail).
+  \item A listing captures the pet's name, species (required), breed, age, gender,
+        description (required), an optional photo, location, and contact info.
+  \item The browse page can be filtered by species and always excludes listings whose
+        status is \texttt{adopted}.
+  \item The poster can cycle a listing's status between \texttt{available},
+        \texttt{pending}, and \texttt{adopted} from the detail page; any other
+        signed-in visitor sees a ``Message about \emph{name}'' button instead.
+\end{itemize}
+
+\section{Veterinary Booking}
+\begin{itemize}[leftmargin=*]
+  \item Routes: \texttt{/vet} (clinic directory), \texttt{/vet/[id]} (booking),
+        \texttt{/vet/appointments} (the signed-in owner's own bookings).
+  \item The clinic directory self-seeds with three demonstration clinics the first time
+        it is visited on an empty \texttt{Vet} table; there is no clinic sign-up flow.
+  \item The booking page shows the next seven days as date tabs. For the selected date
+        it computes real availability from a fixed set of eight daily time slots
+        (09:00--17:00, hourly except the 12:00 slot), excluding any slot that already
+        has a confirmed appointment for that vet and excluding, for the current day
+        only, any slot whose time has already passed.
+  \item Booking requires selecting one of the signed-in owner's own pets and a reason
+        (a fixed list: wellness check, vaccines, skin/coat, dental, other), plus
+        optional notes.
+  \item A booking is rejected server-side if the exact slot was already taken between
+        page load and submission (a race-condition guard, not just a UI affordance).
+  \item The owner can cancel their own upcoming appointment from
+        \texttt{/vet/appointments}, which frees the slot for other bookings.
+\end{itemize}
+
+\section{Marketplace}
+\begin{itemize}[leftmargin=*]
+  \item Routes: \texttt{/marketplace} (browse), \texttt{/marketplace/new} (post a
+        listing), \texttt{/marketplace/[id]} (detail).
+  \item A listing has a title, category (food, toys, beds, health, accessories, other),
+        price, description, an optional photo, and an optional location.
+  \item The browse page can be filtered by category. Unlike an adoption listing, a sold
+        marketplace listing remains visible in the browse list with a ``Sold'' badge
+        rather than disappearing.
+  \item The seller can toggle a listing between \texttt{available} and \texttt{sold}
+        from the detail page; any other signed-in visitor sees a ``Message about
+        \emph{title}'' button instead.
+\end{itemize}
+
+\section{Not Yet Implemented}
+The following are either present in the data model but unused, or were explicitly
+deferred during development and are not part of the current product:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Hashtags and text search.} The \texttt{Hashtag} and
+        \texttt{HashtagsOnPosts} tables exist in the schema but no code path writes to
+        or reads from them; there is no hashtag extraction from captions and no
+        hashtag-based discovery page. The only existing search is a simple
+        name/username filter on the Explore page.
+  \item \textbf{Stories.} An ephemeral, 24-hour photo/video format shown at the top of
+        the feed, as seen in comparable products. Not built.
+  \item \textbf{Reels.} A short-form, full-screen vertical video feed. Not built.
+  \item \textbf{Real-time chat delivery.} Direct messages are currently delivered by
+        page revalidation (the recipient sees a new message on their next navigation or
+        refresh, not via a live socket connection).
+\end{itemize}
+
+\end{document}
