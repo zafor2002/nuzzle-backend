@@ -68,16 +68,22 @@ export default async function ExplorePage({
           />
         </form>
 
-        <div className="flex gap-2 lg:hidden">
+        <div className="flex gap-2 overflow-x-auto lg:hidden">
           <Link
             href="/communities"
-            className="flex flex-1 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium"
           >
             🐾 Communities
           </Link>
           <Link
+            href="/adoption"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium"
+          >
+            <Icon name="heart" className="h-4 w-4" /> Adopt
+          </Link>
+          <Link
             href="/lost-found"
-            className="flex flex-1 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium"
           >
             <Icon name="siren" className="h-4 w-4" /> Lost & Found
           </Link>

@@ -32,6 +32,7 @@ model Owner {
   receivedMessages Message[] @relation("MessageReceiver")
   notifications Notification[]
   lostFoundPosts LostFoundPost[]
+  adoptionListings AdoptionListing[]
 }
 
 model Pet {
@@ -181,4 +182,24 @@ model LostFoundPost {
 
   @@index([ownerId])
   @@index([petId])
+}
+
+model AdoptionListing {
+  id          String   @id @default(cuid())
+  posterId    String
+  poster      Owner    @relation(fields: [posterId], references: [id], onDelete: Cascade)
+  name        String
+  species     String
+  breed       String?
+  age         String?
+  gender      String?
+  description String
+  mediaUrls   String[]
+  location    String?
+  contactInfo String?
+  status      String   @default("available") // "available" | "pending" | "adopted"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([posterId])
 }
