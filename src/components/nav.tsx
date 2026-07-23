@@ -12,7 +12,10 @@ export async function Nav() {
   } = await supabase.auth.getUser();
 
   const owner = user
-    ? await prisma.owner.findUnique({ where: { id: user.id }, select: { username: true, displayName: true } })
+    ? await prisma.owner.findUnique({
+        where: { id: user.id },
+        select: { username: true, displayName: true, avatarUrl: true, isAnonymous: true },
+      })
     : null;
 
   const unreadCount = user
@@ -32,7 +35,7 @@ export async function Nav() {
               <Button className="px-3 py-1.5 text-sm">New post</Button>
             </Link>
             <Link href={`/owners/${owner.username}`} title={owner.displayName}>
-              <Avatar name={owner.displayName} size="sm" />
+              <Avatar name={owner.displayName} src={owner.isAnonymous ? null : owner.avatarUrl} size="sm" />
             </Link>
             <form action={logout}>
               <button type="submit" className="text-sm text-muted hover:text-foreground">

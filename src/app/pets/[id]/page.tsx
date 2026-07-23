@@ -42,15 +42,22 @@ export default async function PetProfilePage({
         &larr; Back
       </Link>
 
-      <div className="flex items-center gap-4">
-        <Avatar name={pet.name} size="lg" />
-        <div>
-          <h1 className="text-2xl font-semibold">{pet.name}</h1>
-          <p className="text-sm text-muted">
-            {pet.species}
-            {pet.breed ? ` · ${pet.breed}` : ""}
-          </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Avatar name={pet.name} src={pet.avatarUrl} size="lg" />
+          <div>
+            <h1 className="text-2xl font-semibold">{pet.name}</h1>
+            <p className="text-sm text-muted">
+              {pet.species}
+              {pet.breed ? ` · ${pet.breed}` : ""}
+            </p>
+          </div>
         </div>
+        {isOwner && (
+          <Link href={`/pets/${pet.id}/edit`}>
+            <Button variant="secondary">Edit</Button>
+          </Link>
+        )}
       </div>
 
       {pet.bio && <p>{pet.bio}</p>}

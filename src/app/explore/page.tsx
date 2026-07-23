@@ -44,7 +44,7 @@ export default async function ExplorePage() {
             return (
               <Card key={owner.id} className="flex items-center justify-between">
                 <Link href={`/owners/${owner.username}`} className="flex items-center gap-3">
-                  <Avatar name={displayName} size="md" />
+                  <Avatar name={displayName} src={owner.isAnonymous ? null : owner.avatarUrl} size="md" />
                   <div>
                     <p className="font-medium">{displayName}</p>
                     <p className="text-sm text-muted">@{owner.username}</p>

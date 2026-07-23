@@ -66,7 +66,11 @@ export default async function PostDetailPage({
                 </>
               )}
               <span className="flex items-center gap-1">
-                <Avatar name={authorLabel} size="sm" />
+                <Avatar
+                  name={authorLabel}
+                  src={hidden ? null : post.pet ? post.pet.avatarUrl : post.owner.avatarUrl}
+                  size="sm"
+                />
                 {post.pet && !hidden ? (
                   <Link href={`/pets/${post.pet.id}`} className="hover:underline">
                     {authorLabel}
@@ -99,7 +103,11 @@ export default async function PostDetailPage({
 
           {post.comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-2 rounded-md border border-border px-3 py-2 text-sm">
-              <Avatar name={comment.owner.isAnonymous ? "?" : comment.owner.displayName} size="sm" />
+              <Avatar
+                name={comment.owner.isAnonymous ? "?" : comment.owner.displayName}
+                src={comment.owner.isAnonymous ? null : comment.owner.avatarUrl}
+                size="sm"
+              />
               <p>
                 <span className="font-medium">
                   {comment.owner.isAnonymous ? "Anonymous" : comment.owner.displayName}

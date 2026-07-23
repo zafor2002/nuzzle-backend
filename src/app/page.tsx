@@ -23,12 +23,17 @@ export default async function Home() {
     <main className="mx-auto flex w-full min-h-[calc(100vh-97px)] max-w-xl flex-col gap-6 p-6">
       {owner ? (
         <>
-          <div className="flex items-center gap-3">
-            <Avatar name={owner.displayName} size="lg" />
-            <div>
-              <p className="text-lg font-semibold">{owner.displayName}</p>
-              <p className="text-sm text-muted">@{owner.username}</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Avatar name={owner.displayName} src={owner.avatarUrl} size="lg" />
+              <div>
+                <p className="text-lg font-semibold">{owner.displayName}</p>
+                <p className="text-sm text-muted">@{owner.username}</p>
+              </div>
             </div>
+            <Link href={`/owners/${owner.username}/edit`}>
+              <Button variant="secondary">Edit profile</Button>
+            </Link>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -45,7 +50,7 @@ export default async function Home() {
               owner.pets.map((pet) => (
                 <Link key={pet.id} href={`/pets/${pet.id}`}>
                   <Card className="flex items-center gap-3 transition-colors hover:bg-muted-bg">
-                    <Avatar name={pet.name} size="md" />
+                    <Avatar name={pet.name} src={pet.avatarUrl} size="md" />
                     <div>
                       <p className="font-medium">{pet.name}</p>
                       <p className="text-sm text-muted">{pet.species}</p>

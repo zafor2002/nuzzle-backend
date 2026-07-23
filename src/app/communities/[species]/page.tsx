@@ -110,7 +110,7 @@ export default async function CommunityPage({
             {pets.map((pet) => (
               <Link key={pet.id} href={`/pets/${pet.id}`}>
                 <Card className="flex items-center gap-3 transition-colors hover:bg-muted-bg">
-                  <Avatar name={pet.name} size="sm" />
+                  <Avatar name={pet.name} src={pet.avatarUrl} size="sm" />
                   <span>
                     {pet.name}
                     {pet.breed && <span className="text-sm text-muted"> · {pet.breed}</span>}

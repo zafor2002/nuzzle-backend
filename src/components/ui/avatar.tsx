@@ -23,11 +23,24 @@ const SIZE_CLASSES = {
 
 export function Avatar({
   name,
+  src,
   size = "md",
 }: {
   name: string;
+  src?: string | null;
   size?: keyof typeof SIZE_CLASSES;
 }) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        className={`inline-block shrink-0 rounded-full object-cover ${SIZE_CLASSES[size]}`}
+      />
+    );
+  }
+
   const initial = name.trim().charAt(0).toUpperCase() || "?";
   return (
     <span

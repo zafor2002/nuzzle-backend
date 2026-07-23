@@ -48,7 +48,7 @@ export async function RightSidebar() {
             return (
               <div key={owner.id} className="flex items-center justify-between gap-2">
                 <Link href={`/owners/${owner.username}`} className="flex min-w-0 items-center gap-2">
-                  <Avatar name={displayName} size="sm" />
+                  <Avatar name={displayName} src={owner.isAnonymous ? null : owner.avatarUrl} size="sm" />
                   <span className="truncate text-sm">{displayName}</span>
                 </Link>
                 {user && <FollowButton ownerId={owner.id} following={followingIds.has(owner.id)} />}

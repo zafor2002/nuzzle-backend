@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FollowButton } from "./follow-button";
 
@@ -49,12 +50,17 @@ export default async function OwnerProfilePage({
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Avatar name={displayName} size="lg" />
+          <Avatar name={displayName} src={owner.isAnonymous ? null : owner.avatarUrl} size="lg" />
           <div>
             <h1 className="text-xl font-semibold">{displayName}</h1>
             <p className="text-sm text-muted">@{owner.username}</p>
           </div>
         </div>
+        {isSelf && (
+          <Link href={`/owners/${owner.username}/edit`}>
+            <Button variant="secondary">Edit profile</Button>
+          </Link>
+        )}
         {!isSelf && user && <FollowButton ownerId={owner.id} following={isFollowing} />}
       </div>
 
@@ -71,7 +77,7 @@ export default async function OwnerProfilePage({
           {owner.pets.map((pet) => (
             <Link key={pet.id} href={`/pets/${pet.id}`}>
               <Card className="flex items-center gap-3 transition-colors hover:bg-muted-bg">
-                <Avatar name={pet.name} size="sm" />
+                <Avatar name={pet.name} src={pet.isAnonymous ? null : pet.avatarUrl} size="sm" />
                 <span>
                   {pet.name} <span className="text-sm text-muted">({pet.species})</span>
                 </span>
