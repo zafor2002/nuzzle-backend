@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 import { StatusButtons } from "./status-buttons";
 
 const STATUS_VARIANT = {
@@ -42,7 +41,7 @@ export default async function AdoptionListingPage({
   const posterName = listing.poster.isAnonymous ? "Anonymous" : listing.poster.displayName;
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <Link href="/adoption" className="text-sm text-muted hover:text-primary">
           &larr; All adoptable pets

@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 import { SoldButton } from "./sold-button";
 
 export default async function MarketplaceListingPage({
@@ -36,7 +35,7 @@ export default async function MarketplaceListingPage({
   const sellerName = listing.seller.isAnonymous ? "Anonymous" : listing.seller.displayName;
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <Link href="/marketplace" className="text-sm text-muted hover:text-primary">
           &larr; Marketplace

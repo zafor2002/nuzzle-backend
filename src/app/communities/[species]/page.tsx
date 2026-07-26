@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PostCard } from "@/components/post-card";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 
 export default async function CommunityPage({
   params,
@@ -54,11 +53,18 @@ export default async function CommunityPage({
   });
 
   return (
-    <Shell
-      left={<LeftSidebar />}
-      right={
-        <Card className="sticky top-[65px] flex flex-col gap-2 p-3">
-          <p className="text-lg font-semibold">🐾 {species}</p>
+    <Shell>
+      <div className="flex flex-col gap-4">
+        <Link href="/communities" className="text-sm text-muted hover:text-primary">
+          &larr; All communities
+        </Link>
+
+        <h1 className="text-2xl font-semibold">
+          🐾 {species}
+          {breed ? ` · ${breed}` : ""}
+        </h1>
+
+        <Card className="flex flex-col gap-2 p-3">
           <p className="text-sm text-muted">
             {pets.length} {pets.length === 1 ? "pet" : "pets"} in this community
           </p>
@@ -72,17 +78,6 @@ export default async function CommunityPage({
             </div>
           )}
         </Card>
-      }
-    >
-      <div className="flex flex-col gap-4">
-        <Link href="/communities" className="text-sm text-muted hover:text-primary">
-          &larr; All communities
-        </Link>
-
-        <h1 className="text-2xl font-semibold">
-          🐾 {species}
-          {breed ? ` · ${breed}` : ""}
-        </h1>
 
         {breeds.length > 0 && (
           <div className="flex flex-wrap gap-2 text-sm">

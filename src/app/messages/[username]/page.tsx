@@ -4,7 +4,6 @@ import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { Avatar } from "@/components/ui/avatar";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 import { MessageForm } from "./message-form";
 
 export default async function ChatPage({
@@ -50,8 +49,8 @@ export default async function ChatPage({
   const displayName = other.isAnonymous ? "Anonymous" : other.displayName;
 
   return (
-    <Shell left={<LeftSidebar />}>
-      <div className="flex h-[calc(100vh-97px)] flex-col gap-3 lg:h-[calc(100vh-65px)]">
+    <Shell>
+      <div className="flex h-[calc(100vh-140px)] flex-col gap-3">
         <div className="flex items-center gap-3">
           <Link href="/messages" className="text-sm text-muted hover:text-primary">
             &larr;

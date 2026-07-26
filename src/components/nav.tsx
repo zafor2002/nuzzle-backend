@@ -31,7 +31,7 @@ export async function Nav() {
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-3">
           <Link href="/" className="shrink-0 text-lg font-semibold text-primary">
             🐾 PetSocial
           </Link>
@@ -46,21 +46,10 @@ export async function Nav() {
                   </span>
                 )}
               </Link>
-              <Link href="/notifications" className="relative hidden text-muted hover:text-foreground lg:block">
-                <Icon name="bell" className="h-6 w-6" />
-                {unreadCount > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium text-white">
-                    {unreadCount}
-                  </span>
-                )}
-              </Link>
-              <Link href="/posts/new" className="hidden lg:block">
-                <Button className="px-3 py-1.5 text-sm">New post</Button>
-              </Link>
               <Link href={`/owners/${owner.username}`} title={owner.displayName}>
                 <Avatar name={owner.displayName} src={owner.isAnonymous ? null : owner.avatarUrl} size="sm" />
               </Link>
-              <form action={logout} className="hidden lg:block">
+              <form action={logout}>
                 <button type="submit" className="text-sm text-muted hover:text-foreground">
                   Log out
                 </button>

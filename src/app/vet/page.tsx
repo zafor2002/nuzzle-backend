@@ -4,7 +4,6 @@ import { ensureVetsSeeded } from "@/lib/vet-seed";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 
 export default async function VetDirectoryPage() {
   await ensureVetsSeeded();
@@ -12,7 +11,7 @@ export default async function VetDirectoryPage() {
   const vets = await prisma.vet.findMany({ orderBy: { rating: "desc" } });
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Book a Vet</h1>

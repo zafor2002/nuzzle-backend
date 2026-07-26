@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 
 const STATUS_VARIANT = {
   available: "success",
@@ -32,7 +31,7 @@ export default async function AdoptionPage({
   ]);
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Adopt</h1>

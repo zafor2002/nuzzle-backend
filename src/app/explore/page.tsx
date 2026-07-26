@@ -7,7 +7,6 @@ import { Icon } from "@/components/ui/icon";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FollowButton } from "@/app/owners/[username]/follow-button";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 
 export default async function ExplorePage({
   searchParams,
@@ -50,7 +49,7 @@ export default async function ExplorePage({
     : new Set<string>();
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-semibold">Explore</h1>
 
@@ -68,7 +67,7 @@ export default async function ExplorePage({
           />
         </form>
 
-        <div className="flex gap-2 overflow-x-auto lg:hidden">
+        <div className="flex gap-2 overflow-x-auto">
           <Link
             href="/communities"
             className="flex shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium"

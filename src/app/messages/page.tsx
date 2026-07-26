@@ -6,7 +6,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 
 export default async function MessagesPage() {
   const supabase = await createClient();
@@ -44,7 +43,7 @@ export default async function MessagesPage() {
   const list = Array.from(conversations.values());
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-semibold">Messages</h1>
 

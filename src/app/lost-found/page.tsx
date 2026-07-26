@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ResolveButton } from "./resolve-button";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 import { isHidden } from "@/lib/visibility";
 
 export default async function LostFoundPage() {
@@ -24,7 +23,7 @@ export default async function LostFoundPage() {
   });
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Lost & Found</h1>

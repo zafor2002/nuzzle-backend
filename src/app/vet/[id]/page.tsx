@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 import { BookingForm } from "./booking-form";
 
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
@@ -74,7 +73,7 @@ export default async function VetBookingPage({
   });
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <Link href="/vet" className="text-sm text-muted hover:text-primary">
           &larr; All vets

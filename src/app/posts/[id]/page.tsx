@@ -7,7 +7,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { VoteArrow } from "@/components/vote-arrow";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 import { isHidden } from "@/lib/visibility";
 import { CommentForm } from "./comment-form";
 
@@ -43,7 +42,7 @@ export default async function PostDetailPage({
   const liked = user ? post.likes.some((l) => l.ownerId === user.id) : false;
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <Link href="/feed" className="text-sm text-muted hover:text-primary">
           &larr; Back to feed

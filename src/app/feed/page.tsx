@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { PostCard } from "@/components/post-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
-import { RightSidebar } from "@/components/right-sidebar";
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -38,7 +36,7 @@ export default async function FeedPage() {
   const isEmptyFollowingFeed = isFollowingFeed && posts.length === 0;
 
   return (
-    <Shell left={<LeftSidebar />} right={<RightSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-semibold">Home</h1>
 

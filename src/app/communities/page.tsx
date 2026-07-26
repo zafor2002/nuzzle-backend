@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Shell } from "@/components/shell";
-import { LeftSidebar } from "@/components/left-sidebar";
 
 export default async function CommunitiesPage() {
   const groups = await prisma.pet.groupBy({
@@ -13,7 +12,7 @@ export default async function CommunitiesPage() {
   });
 
   return (
-    <Shell left={<LeftSidebar />}>
+    <Shell>
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-semibold">Communities</h1>
 
