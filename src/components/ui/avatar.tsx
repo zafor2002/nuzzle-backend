@@ -1,34 +1,47 @@
-const PALETTE = [
-  "bg-rose-200 text-rose-800",
-  "bg-amber-200 text-amber-800",
-  "bg-lime-200 text-lime-800",
-  "bg-teal-200 text-teal-800",
-  "bg-sky-200 text-sky-800",
-  "bg-violet-200 text-violet-800",
+// Pastel tone pairs [background, foreground] — mirrors the prototype's palette.
+const TONES: [string, string][] = [
+  ["#FDE3D2", "#B4693A"],
+  ["#DCE8F7", "#3F6389"],
+  ["#E6E0F5", "#61508F"],
+  ["#DDF0E2", "#3B7A55"],
+  ["#FBE0E8", "#9C4A63"],
+  ["#F6EBD2", "#8A6A2E"],
 ];
 
-function colorFor(name: string) {
+function toneFor(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) % PALETTE.length;
+    hash = (hash * 31 + name.charCodeAt(i)) % TONES.length;
   }
-  return PALETTE[hash];
+  return TONES[hash];
+}
+
+/** Up to two letters: initials of the first two words, else the first two characters. */
+function initialsFor(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
 }
 
 const SIZE_CLASSES = {
-  sm: "h-6 w-6 text-xs",
-  md: "h-9 w-9 text-sm",
+  xs: "h-6 w-6 text-[10px]",
+  sm: "h-8 w-8 text-xs",
+  md: "h-10 w-10 text-sm",
   lg: "h-14 w-14 text-lg",
+  xl: "h-[76px] w-[76px] text-2xl",
 };
 
 export function Avatar({
   name,
   src,
   size = "md",
+  className = "",
 }: {
   name: string;
   src?: string | null;
   size?: keyof typeof SIZE_CLASSES;
+  className?: string;
 }) {
   if (src) {
     return (
@@ -36,17 +49,18 @@ export function Avatar({
       <img
         src={src}
         alt=""
-        className={`inline-block shrink-0 rounded-full object-cover ${SIZE_CLASSES[size]}`}
+        className={`inline-block shrink-0 rounded-full object-cover ${SIZE_CLASSES[size]} ${className}`}
       />
     );
   }
 
-  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  const [bg, fg] = toneFor(name);
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-medium ${colorFor(name)} ${SIZE_CLASSES[size]}`}
+      style={{ backgroundColor: bg, color: fg }}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold ${SIZE_CLASSES[size]} ${className}`}
     >
-      {initial}
+      {initialsFor(name)}
     </span>
   );
 }

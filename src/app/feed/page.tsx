@@ -41,7 +41,7 @@ export default async function FeedPage() {
         <h1 className="text-2xl font-semibold">Home</h1>
 
         {isEmptyFollowingFeed && (
-          <EmptyState>
+          <EmptyState icon="pawprint" title="Your feed is quiet">
             No posts yet from people you follow.{" "}
             <Link href="/explore" className="text-primary underline">
               Explore
@@ -49,9 +49,13 @@ export default async function FeedPage() {
             to find pets and owners to follow.
           </EmptyState>
         )}
-        {!isFollowingFeed && posts.length === 0 && <EmptyState>No posts yet.</EmptyState>}
+        {!isFollowingFeed && posts.length === 0 && (
+          <EmptyState icon="pawprint" title="No posts yet">
+            Be the first to share something.
+          </EmptyState>
+        )}
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           {posts.map((post) => (
             <PostCard key={post.id} post={post} currentUserId={user?.id} />
           ))}

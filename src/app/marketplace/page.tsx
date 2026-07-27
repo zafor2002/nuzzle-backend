@@ -55,7 +55,7 @@ export default async function MarketplacePage({
         <div className="grid grid-cols-2 gap-3">
           {listings.map((listing) => (
             <Link key={listing.id} href={`/marketplace/${listing.id}`}>
-              <Card className="flex flex-col gap-1 overflow-hidden p-0">
+              <Card padded={false} className="flex flex-col gap-1 overflow-hidden">
                 <div className="relative">
                   {listing.mediaUrls[0] ? (
                     <Image

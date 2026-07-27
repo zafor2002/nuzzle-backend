@@ -65,7 +65,7 @@ export default async function AdoptionPage({
         <div className="flex flex-col gap-3">
           {listings.map((listing) => (
             <Link key={listing.id} href={`/adoption/${listing.id}`}>
-              <Card className="flex gap-3 overflow-hidden p-3">
+              <Card padded={false} className="flex gap-3 overflow-hidden p-3">
                 {listing.mediaUrls[0] ? (
                   <Image
                     src={listing.mediaUrls[0]}

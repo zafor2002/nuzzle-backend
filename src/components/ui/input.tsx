@@ -1,7 +1,7 @@
 import { InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttributes } from "react";
 
 const fieldClasses =
-  "rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-primary";
+  "w-full rounded-[14px] border-[1.5px] border-border bg-card px-3.5 py-3 text-sm outline-none transition-colors focus:border-primary";
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className = "", ...rest } = props;
@@ -10,7 +10,7 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const { className = "", ...rest } = props;
-  return <textarea className={`${fieldClasses} ${className}`} {...rest} />;
+  return <textarea className={`${fieldClasses} resize-none leading-relaxed ${className}`} {...rest} />;
 }
 
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
@@ -26,8 +26,8 @@ export function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm text-muted">
-      {label}
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[12.5px] font-semibold text-muted">{label}</span>
       {children}
     </label>
   );

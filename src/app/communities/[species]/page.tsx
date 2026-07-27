@@ -64,7 +64,7 @@ export default async function CommunityPage({
           {breed ? ` · ${breed}` : ""}
         </h1>
 
-        <Card className="flex flex-col gap-2 p-3">
+        <Card padded={false} className="flex flex-col gap-2 p-3">
           <p className="text-sm text-muted">
             {pets.length} {pets.length === 1 ? "pet" : "pets"} in this community
           </p>

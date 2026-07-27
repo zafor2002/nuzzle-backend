@@ -23,14 +23,17 @@ const PATHS: Record<string, string> = {
   cross: "M2 12h4l1.5-4 3 12 2.5-14 2 6h6.5",
   calendar: "M3 5h18v16H3zM3 10h18M8 3v4M16 3v4",
   cart: "M3 4h2.2l1 3M6.2 7h13.6l-1.5 8H8.5L6.2 7zM9 19a1.2 1.2 0 100 2.4A1.2 1.2 0 009 19zM17 19a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4z",
+  pin: "M12 21s7-6.3 7-11a7 7 0 10-14 0c0 4.7 7 11 7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z",
 };
+
+export type IconName = keyof typeof PATHS;
 
 export function Icon({
   name,
   className = "",
   filled = false,
 }: {
-  name: keyof typeof PATHS;
+  name: IconName;
   className?: string;
   filled?: boolean;
 }) {
