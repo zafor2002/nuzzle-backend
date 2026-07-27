@@ -134,11 +134,12 @@
   /* post card */
   .post{margin:0 16px 14px}
   .post .head{display:flex;align-items:center;gap:10px;padding:12px 14px}
-  .post .acts{display:flex;align-items:center;gap:6px;padding:10px 12px}
+  /* .acts and .cap are used both inside .post and standalone on the detail screen */
+  .acts{display:flex;align-items:center;gap:6px;padding:10px 12px}
   .actbtn{display:flex;align-items:center;gap:5px;padding:7px 10px;border-radius:12px;font-size:13px;font-weight:600;color:var(--muted)}
   .actbtn:hover{background:var(--muted-bg)}
   .actbtn.liked{color:var(--danger)}
-  .post .cap{padding:0 14px 13px;font-size:14px;line-height:1.55}
+  .cap{padding:0 14px 13px;font-size:14px;line-height:1.55}
 
   /* grid */
   .ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
