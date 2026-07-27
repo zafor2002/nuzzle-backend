@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PetSocial — Stories Prototype</title>
+<style>
+  :root {
+    --paper: #FFFCF9;
+    --card: #FFFFFF;
+    --ink: #4A3F38;
+    --muted: #9C8F86;
+    --muted-bg: #F6EFE8;
+    --border: #F1E7DE;
+    --primary: #F4915C;
+    --danger: #E8637F;
+    --radius: 20px;
+    --font: ui-rounded, "SF Pro Rounded", "Segoe UI Variable", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: #E8E2DC;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    padding: 32px 16px; color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .page-title { font-size: 15px; color: #6B5F57; text-align: center; }
+  .page-title strong { display: block; font-size: 20px; color: #3A312B; margin-bottom: 4px; }
+
+  .phone {
+    width: 390px; height: 844px; background: var(--paper);
+    border-radius: 44px;
+    box-shadow: 0 30px 60px rgba(70,50,40,.28), 0 0 0 10px #2B2420, 0 0 0 12px #4A403A;
+    position: relative; overflow: hidden; flex-shrink: 0;
+  }
+  .notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 132px; height: 30px; background: #2B2420;
+    border-radius: 0 0 18px 18px; z-index: 60;
+  }
+
+  /* ---------- FEED VIEW ---------- */
+  .feed { position: absolute; inset: 0; display: flex; flex-direction: column; }
+
+  .topbar {
+    padding: 52px 18px 12px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); background: rgba(255,252,249,.94);
+  }
+  .brand { font-size: 19px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+
+  /* story ring row */
+  .rings {
+    display: flex; gap: 15px; padding: 15px 18px 16px;
+    overflow-x: auto; border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .rings::-webkit-scrollbar { display: none; }
+  .ring-item {
+    flex-shrink: 0; width: 68px; text-align: center; cursor: pointer;
+    background: none; border: none; font-family: inherit; padding: 0;
+  }
+  .ring {
+    width: 66px; height: 66px; border-radius: 50%; padding: 3px;
+    background: conic-gradient(from 200deg, #F4915C, #F2718B, #C6A8E8, #4FBAD4, #F4915C);
+    display: grid; place-items: center; transition: transform .15s;
+  }
+  .ring-item:active .ring { transform: scale(.94); }
+  .ring.seen { background: var(--border); }
+  .ring.mine { background: none; border: 2px dashed var(--border); padding: 1px; }
+  .ring-inner {
+    width: 100%; height: 100%; border-radius: 50%;
+    border: 2.5px solid var(--paper);
+    display: grid; place-items: center;
+    font-size: 22px; font-weight: 600;
+  }
+  .ring-label {
+    display: block; margin-top: 6px; font-size: 11.5px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .add-badge {
+    position: absolute; right: -2px; bottom: 16px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    border: 2.5px solid var(--paper);
+    display: grid; place-items: center; font-size: 14px; line-height: 1;
+  }
+
+  .feed-body { flex: 1; padding: 16px 18px; }
+  .placeholder-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+    display: flex; gap: 12px; align-items: center;
+  }
+  .ph-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 15px; }
+  .ph-lines { flex: 1; }
+  .ph-lines i { display: block; height: 9px; border-radius: 5px; background: var(--muted-bg); }
+  .ph-lines i:first-child { width: 55%; margin-bottom: 7px; }
+  .ph-lines i:last-child { width: 80%; }
+
+  .tabbar {
+    border-top: 1px solid var(--border); background: rgba(255,252,249,.95);
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 10px 8px 26px;
+  }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: var(--muted); }
+  .tab.on { color: var(--primary); }
+  .tab-fab {
+    width: 48px; height: 48px; border-radius: 17px; background: var(--primary);
+    display: grid; place-items: center; margin-top: -22px;
+    box-shadow: 0 10px 20px rgba(244,145,92,.4);
+  }
+
+  /* ---------- STORY VIEWER ---------- */
+  .viewer {
+    position: absolute; inset: 0; z-index: 80;
+    background: #17131A; display: none; flex-direction: column;
+  }
+  .viewer.open { display: flex; }
+
+  .v-media { position: absolute; inset: 0; }
+  .v-media .slide { position: absolute; inset: 0; display: none; }
+  .v-media .slide.on { display: block; }
+  .v-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 22%, transparent 62%, rgba(0,0,0,.6) 100%);
+  }
+
+  .v-bars { position: absolute; top: 56px; left: 12px; right: 12px; display: flex; gap: 4px; z-index: 5; }
+  .v-bar { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.32); overflow: hidden; }
+  .v-bar span { display: block; height: 100%; width: 0; background: #fff; border-radius: 3px; }
+  .v-bar.done span { width: 100%; }
+  .v-bar.live span { animation: fill 4.2s linear forwards; }
+  @keyframes fill { to { width: 100% } }
+
+  .v-head {
+    position: absolute; top: 72px; left: 14px; right: 14px; z-index: 5;
+    display: flex; align-items: center; gap: 10px; color: #fff;
+  }
+  .v-av { width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,.85); display: grid; place-items: center; font-weight: 600; font-size: 14px; }
+  .v-who { font-size: 14px; font-weight: 600; }
+  .v-when { font-size: 12px; opacity: .75; }
+  .v-close { margin-left: auto; background: none; border: none; color: #fff; font-size: 26px; cursor: pointer; line-height: 1; opacity: .9; }
+
+  .v-caption {
+    position: absolute; left: 20px; right: 20px; bottom: 108px; z-index: 5;
+    color: #fff; font-size: 16px; line-height: 1.45; text-shadow: 0 2px 12px rgba(0,0,0,.5);
+  }
+
+  .v-reply {
+    position: absolute; left: 16px; right: 16px; bottom: 40px; z-index: 6;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .v-input {
+    flex: 1; border-radius: 99px; border: 1.5px solid rgba(255,255,255,.4);
+    background: rgba(255,255,255,.12); backdrop-filter: blur(8px);
+    color: #fff; font-family: inherit; font-size: 14px; padding: 12px 18px;
+  }
+  .v-input::placeholder { color: rgba(255,255,255,.65); }
+  .v-icon { background: none; border: none; cursor: pointer; padding: 4px; }
+
+  /* invisible tap zones */
+  .v-tap { position: absolute; top: 0; bottom: 96px; width: 32%; z-index: 4; background: none; border: none; cursor: pointer; }
+  .v-tap.left { left: 0; }
+  .v-tap.right { right: 0; width: 68%; }
+
+  .hint { font-size: 13px; color: #6B5F57; text-align: center; max-width: 420px; line-height: 1.6; }
+  .hint code { background: rgba(255,255,255,.6); padding: 1px 6px; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  <strong>Stories</strong>
+  Ring row on the feed → full-screen viewer
+</div>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <!-- FEED -->
+  <div class="feed">
+    <div class="topbar">
+      <div class="brand">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <ellipse cx="12" cy="17.5" rx="5.4" ry="4.3"/><ellipse cx="5.3" cy="12.4" rx="2.5" ry="3.1"/>
+          <ellipse cx="18.7" cy="12.4" rx="2.5" ry="3.1"/><ellipse cx="8.9" cy="6.6" rx="2.4" ry="3"/>
+          <ellipse cx="15.1" cy="6.6" rx="2.4" ry="3"/>
+        </svg>
+        PetSocial
+      </div>
+      <div style="width:32px;height:32px;border-radius:50%;background:#BEE9F7;display:grid;place-items:center;font-size:13px;font-weight:600;color:#1D5D6E">A</div>
+    </div>
+
+    <div class="rings">
+      <button class="ring-item" style="position:relative">
+        <div class="ring mine"><div class="ring-inner" style="background:#FFEBDB;color:#8A4A1E">A</div></div>
+        <div class="add-badge">+</div>
+        <span class="ring-label">Your story</span>
+      </button>
+      <button class="ring-item" onclick="openViewer(0)">
+        <div class="ring"><div class="ring-inner" style="background:#FFE6D2;color:#8A4A1E">N</div></div>
+        <span class="ring-label">Nala</span>
+      </button>
+      <button class="ring-item" onclick="openViewer(1)">
+        <div class="ring"><div class="ring-inner" style="background:#D9F2F8;color:#1D5D6E">M</div></div>
+        <span class="ring-label">Milo</span>
+      </button>
+      <button class="ring-item" onclick="openViewer(2)">
+        <div class="ring"><div class="ring-inner" style="background:#E9F5DD;color:#3F6B2C">B</div></div>
+        <span class="ring-label">Biscuit</span>
+      </button>
+      <button class="ring-item" onclick="openViewer(0)">
+        <div class="ring seen"><div class="ring-inner" style="background:#EFE4FA;color:#5B3E7E">P</div></div>
+        <span class="ring-label">Pepper</span>
+      </button>
+      <button class="ring-item" onclick="openViewer(1)">
+        <div class="ring seen"><div class="ring-inner" style="background:#FFE0E6;color:#8E3550">R</div></div>
+        <span class="ring-label">Rusty</span>
+      </button>
+    </div>
+
+    <div class="feed-body">
+      <div class="placeholder-card">
+        <div class="ph-av" style="background:#FFE6D2;color:#8A4A1E">N</div>
+        <div class="ph-lines"><i></i><i></i></div>
+      </div>
+      <div class="placeholder-card">
+        <div class="ph-av" style="background:#D9F2F8;color:#1D5D6E">M</div>
+        <div class="ph-lines"><i></i><i></i></div>
+      </div>
+      <div class="placeholder-card">
+        <div class="ph-av" style="background:#E9F5DD;color:#3F6B2C">B</div>
+        <div class="ph-lines"><i></i><i></i></div>
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <div class="tab on">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="currentColor"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/></svg>
+        Home
+      </div>
+      <div class="tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2.2 5.8-5.8 2.2 2.2-5.8z"/></svg>
+        Explore
+      </div>
+      <div class="tab-fab">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <div class="tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 10a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6zM10 20a2 2 0 004 0"/></svg>
+        Activity
+      </div>
+      <div class="tab">
+        <div style="width:23px;height:23px;border-radius:50%;background:#BEE9F7;display:grid;place-items:center;font-size:11px;color:#1D5D6E;font-weight:700">A</div>
+        Profile
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEWER -->
+  <div class="viewer" id="viewer">
+    <div class="v-media" id="vMedia">
+      <div class="slide" style="background:linear-gradient(165deg,#FFC98A,#F4915C 55%,#D8663A)"></div>
+      <div class="slide" style="background:linear-gradient(165deg,#9BDEEF,#4FBAD4 55%,#1D6E85)"></div>
+      <div class="slide" style="background:linear-gradient(165deg,#C6E8A8,#8FC96A 55%,#4E8A34)"></div>
+    </div>
+    <div class="v-scrim"></div>
+
+    <div class="v-bars" id="vBars">
+      <div class="v-bar"><span></span></div>
+      <div class="v-bar"><span></span></div>
+      <div class="v-bar"><span></span></div>
+    </div>
+
+    <div class="v-head">
+      <div class="v-av" id="vAv" style="background:rgba(255,255,255,.22)">N</div>
+      <div>
+        <div class="v-who" id="vWho">Nala</div>
+        <div class="v-when" id="vWhen">2h ago</div>
+      </div>
+      <button class="v-close" onclick="closeViewer()">&times;</button>
+    </div>
+
+    <button class="v-tap left" onclick="prevSlide()" aria-label="Previous"></button>
+    <button class="v-tap right" onclick="nextSlide()" aria-label="Next"></button>
+
+    <p class="v-caption" id="vCap">First trip to the beach and she would not stop digging 🏖️</p>
+
+    <div class="v-reply">
+      <input class="v-input" placeholder="Send a message…">
+      <button class="v-icon" aria-label="Like">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M12 20s-7.5-4.6-9.8-9.2C.6 7.4 2.3 4 5.8 4c2 0 3.4 1 4.8 2.7C12 5 13.4 4 15.4 4c3.5 0 5.2 3.4 3.6 6.8C19.5 15.4 12 20 12 20z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<p class="hint">
+  Tap a story ring to open the viewer. Inside: tap <code>right side</code> to advance,
+  <code>left side</code> to go back, <code>&times;</code> to close. Segments auto-advance every 4.2s.
+</p>
+
+<script>
+  const STORIES = [
+    { who: 'Nala',    av: 'N', avBg: '#FFE6D2', avFg: '#8A4A1E', when: '2h ago',
+      caps: ['First trip to the beach and she would not stop digging 🏖️',
+             'Nap #4 of the day. Zero regrets.',
+             'Finally learned "roll over" — only took 3 weeks'] },
+    { who: 'Milo',    av: 'M', avBg: '#D9F2F8', avFg: '#1D5D6E', when: '5h ago',
+      caps: ['Window shift starts at 6am sharp',
+             'Someone found the sunbeam',
+             'He does not share the chair'] },
+    { who: 'Biscuit', av: 'B', avBg: '#E9F5DD', avFg: '#3F6B2C', when: '8h ago',
+      caps: ['Park meetup with the whole crew 🐾',
+             'Muddy paws, happy heart',
+             'Bath time was not a hit'] }
+  ];
+
+  let storyIdx = 0, slideIdx = 0, timer = null;
+
+  function openViewer(i) {
+    storyIdx = i; slideIdx = 0;
+    document.getElementById('viewer').classList.add('open');
+    render();
+  }
+  function closeViewer() {
+    document.getElementById('viewer').classList.remove('open');
+    clearTimeout(timer);
+  }
+  function nextSlide() {
+    const s = STORIES[storyIdx];
+    if (slideIdx < s.caps.length - 1) { slideIdx++; render(); }
+    else if (storyIdx < STORIES.length - 1) { storyIdx++; slideIdx = 0; render(); }
+    else closeViewer();
+  }
+  function prevSlide() {
+    if (slideIdx > 0) { slideIdx--; render(); }
+    else if (storyIdx > 0) { storyIdx--; slideIdx = 0; render(); }
+  }
+
+  function render() {
+    const s = STORIES[storyIdx];
+    document.getElementById('vWho').textContent = s.who;
+    document.getElementById('vWhen').textContent = s.when;
+    document.getElementById('vCap').textContent = s.caps[slideIdx];
+
+    const av = document.getElementById('vAv');
+    av.textContent = s.av;
+    av.style.background = s.avBg;
+    av.style.color = s.avFg;
+
+    document.querySelectorAll('#vMedia .slide').forEach((el, i) =>
+      el.classList.toggle('on', i === storyIdx));
+
+    const bars = document.getElementById('vBars');
+    bars.innerHTML = s.caps.map((_, i) =>
+      `<div class="v-bar ${i < slideIdx ? 'done' : i === slideIdx ? 'live' : ''}"><span></span></div>`
+    ).join('');
+
+    clearTimeout(timer);
+    timer = setTimeout(nextSlide, 4200);
+  }
+</script>
+</body>
+</html>

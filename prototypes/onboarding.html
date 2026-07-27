@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PetSocial — Onboarding Prototype</title>
+<style>
+  :root {
+    --paper: #FFFCF9;
+    --card: #FFFFFF;
+    --ink: #4A3F38;
+    --muted: #9C8F86;
+    --border: #F1E7DE;
+    --primary: #F4915C;
+    --primary-soft: #FFEBDB;
+    --secondary: #4FBAD4;
+    --secondary-soft: #E6F7FA;
+    --lilac-soft: #EFE4FA;
+    --radius: 20px;
+    --font: ui-rounded, "SF Pro Rounded", "Segoe UI Variable", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: #E8E2DC;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 32px 16px;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page-title { font-size: 15px; color: #6B5F57; text-align: center; }
+  .page-title strong { display: block; font-size: 20px; color: #3A312B; margin-bottom: 4px; }
+
+  /* ---- device frame ---- */
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: var(--paper);
+    border-radius: 44px;
+    box-shadow: 0 30px 60px rgba(70,50,40,.28), 0 0 0 10px #2B2420, 0 0 0 12px #4A403A;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 132px; height: 30px; background: #2B2420;
+    border-radius: 0 0 18px 18px; z-index: 60;
+  }
+
+  .screen {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    padding: 58px 28px 40px;
+  }
+  .screen.active { display: flex; }
+
+  /* ---- splash ---- */
+  #splash {
+    background: linear-gradient(165deg, #FFD9BC 0%, var(--primary) 55%, #E8794A 100%);
+    align-items: center; justify-content: center; gap: 22px;
+    color: #fff;
+  }
+  .splash-mark {
+    width: 116px; height: 116px; border-radius: 38px;
+    background: rgba(255,255,255,.22);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 22px 44px rgba(120,60,25,.28);
+    animation: pop .7s cubic-bezier(.2,1.3,.4,1) both;
+  }
+  @keyframes pop { from { transform: scale(.7); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+  .splash-name { font-size: 34px; font-weight: 700; letter-spacing: -.5px; }
+  .splash-tag { font-size: 15px; opacity: .92; }
+  .splash-dots { display: flex; gap: 7px; margin-top: 10px; }
+  .splash-dots i {
+    width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.6);
+    animation: bounce 1.1s infinite;
+  }
+  .splash-dots i:nth-child(2) { animation-delay: .15s }
+  .splash-dots i:nth-child(3) { animation-delay: .3s }
+  @keyframes bounce { 0%,100% { opacity:.35; transform: translateY(0) } 50% { opacity:1; transform: translateY(-5px) } }
+
+  /* ---- onboarding pages ---- */
+  .ob-art {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 32px;
+    margin-bottom: 26px;
+  }
+  .ob-copy { text-align: center; }
+  .ob-copy h2 { font-size: 26px; line-height: 1.22; letter-spacing: -.4px; margin-bottom: 10px; }
+  .ob-copy p { font-size: 15px; line-height: 1.55; color: var(--muted); }
+
+  .ob-dots { display: flex; justify-content: center; gap: 7px; margin: 26px 0 20px; }
+  .ob-dots span {
+    height: 7px; width: 7px; border-radius: 99px; background: var(--border);
+    transition: all .25s;
+  }
+  .ob-dots span.on { width: 22px; background: var(--primary); }
+
+  .ob-actions { display: flex; align-items: center; gap: 12px; }
+
+  .btn {
+    font-family: inherit; font-size: 15px; font-weight: 600;
+    border: none; border-radius: var(--radius); cursor: pointer;
+    padding: 15px 20px; transition: transform .12s, opacity .2s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary {
+    background: var(--primary); color: #fff;
+    box-shadow: 0 10px 22px rgba(244,145,92,.34);
+  }
+  .btn-ghost { background: none; color: var(--muted); padding: 15px 6px; }
+  .btn-outline {
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--border);
+  }
+  /* only stretch to fill inside the horizontal action row */
+  .ob-actions .btn-primary,
+  .ob-actions .btn-outline { flex: 1; }
+  /* full-width stacked buttons keep their natural height */
+  #auth .btn { width: 100%; flex: 0 0 auto; }
+
+  /* ---- auth choice ---- */
+  #auth { justify-content: flex-end; gap: 14px; }
+  #auth .ob-art { margin-bottom: 8px; }
+  .auth-title { text-align: center; margin-bottom: 12px; }
+  .auth-title h2 { font-size: 27px; letter-spacing: -.4px; margin-bottom: 8px; }
+  .auth-title p { font-size: 14.5px; color: var(--muted); }
+  .auth-legal { text-align: center; font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
+  .auth-legal u { text-decoration-color: var(--border); }
+
+  /* skip link */
+  .skip {
+    position: absolute; top: 60px; right: 26px; z-index: 20;
+    background: none; border: none; font-family: inherit;
+    font-size: 14px; color: var(--muted); cursor: pointer;
+  }
+
+  .hint { font-size: 13px; color: #6B5F57; text-align: center; max-width: 390px; }
+  .hint code { background: rgba(255,255,255,.6); padding: 1px 6px; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  <strong>Onboarding flow</strong>
+  Splash → 3 intro pages → sign-up choice
+</div>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <!-- SPLASH -->
+  <section class="screen active" id="splash">
+    <div class="splash-mark">
+      <svg width="62" height="62" viewBox="0 0 24 24" fill="#fff">
+        <ellipse cx="12" cy="17.5" rx="5.4" ry="4.3"/>
+        <ellipse cx="5.3" cy="12.4" rx="2.5" ry="3.1"/>
+        <ellipse cx="18.7" cy="12.4" rx="2.5" ry="3.1"/>
+        <ellipse cx="8.9" cy="6.6" rx="2.4" ry="3"/>
+        <ellipse cx="15.1" cy="6.6" rx="2.4" ry="3"/>
+      </svg>
+    </div>
+    <div style="text-align:center">
+      <div class="splash-name">PetSocial</div>
+      <div class="splash-tag">Where every pet has a story</div>
+    </div>
+    <div class="splash-dots"><i></i><i></i><i></i></div>
+  </section>
+
+  <!-- ONBOARD 1 -->
+  <section class="screen" id="ob1">
+    <button class="skip" onclick="go('auth')">Skip</button>
+    <div class="ob-art" style="background:linear-gradient(160deg,#FFEBDB,#FFD3B0)">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <ellipse cx="100" cy="176" rx="62" ry="10" fill="rgba(120,70,40,.13)"/>
+        <g transform="translate(48,40)">
+          <!-- floppy ears, tinted so they read as separate from the head -->
+          <ellipse cx="17" cy="52" rx="14" ry="26" fill="#E8B58A" transform="rotate(-14 17 52)"/>
+          <ellipse cx="99" cy="52" rx="14" ry="26" fill="#E8B58A" transform="rotate(14 99 52)"/>
+          <!-- head -->
+          <path d="M22 62Q14 34 34 20Q46 10 58 20Q70 10 82 20Q102 34 94 62Q94 94 58 102Q22 94 22 62Z" fill="#fff"/>
+          <!-- muzzle -->
+          <ellipse cx="58" cy="74" rx="23" ry="18" fill="#FFF6EE"/>
+          <circle cx="44" cy="54" r="5" fill="#4A3F38"/>
+          <circle cx="72" cy="54" r="5" fill="#4A3F38"/>
+          <ellipse cx="58" cy="70" rx="7" ry="5" fill="#4A3F38"/>
+          <path d="M58 75v5M58 80q-7 6-12 0M58 80q7 6 12 0" stroke="#4A3F38" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <div class="ob-copy">
+      <h2>Your pet gets<br>their own profile</h2>
+      <p>Not a tag on your photos — a real profile, with their own followers, posts, and personality.</p>
+    </div>
+    <div class="ob-dots"><span class="on"></span><span></span><span></span></div>
+    <div class="ob-actions"><button class="btn btn-primary" onclick="go('ob2')">Next</button></div>
+  </section>
+
+  <!-- ONBOARD 2 -->
+  <section class="screen" id="ob2">
+    <button class="skip" onclick="go('auth')">Skip</button>
+    <div class="ob-art" style="background:linear-gradient(160deg,#E6F7FA,#BEE6F0)">
+      <svg width="210" height="200" viewBox="0 0 210 200">
+        <ellipse cx="105" cy="176" rx="64" ry="10" fill="rgba(30,90,110,.13)"/>
+        <g transform="translate(56,40)">
+          <path d="M50 8L24 42Q6 66 16 94Q26 120 50 124Q74 120 84 94Q94 66 76 42Z" fill="#fff"/>
+          <path d="M24 42L10 16Q22 27 29 37Z" fill="#fff"/>
+          <path d="M76 42L90 16Q78 27 71 37Z" fill="#fff"/>
+          <circle cx="39" cy="72" r="4.8" fill="#4A3F38"/>
+          <circle cx="61" cy="72" r="4.8" fill="#4A3F38"/>
+          <ellipse cx="50" cy="88" rx="6.2" ry="4.4" fill="#4A3F38"/>
+        </g>
+        <g fill="#4FBAD4" opacity=".55">
+          <circle cx="30" cy="52" r="7"/><circle cx="180" cy="70" r="9"/><circle cx="164" cy="34" r="5"/>
+        </g>
+      </svg>
+    </div>
+    <div class="ob-copy">
+      <h2>Find your local<br>pet community</h2>
+      <p>Breed groups, lost &amp; found alerts nearby, and owners in your area — all in one place.</p>
+    </div>
+    <div class="ob-dots"><span></span><span class="on"></span><span></span></div>
+    <div class="ob-actions">
+      <button class="btn btn-ghost" onclick="go('ob1')">Back</button>
+      <button class="btn btn-primary" onclick="go('ob3')">Next</button>
+    </div>
+  </section>
+
+  <!-- ONBOARD 3 -->
+  <section class="screen" id="ob3">
+    <button class="skip" onclick="go('auth')">Skip</button>
+    <div class="ob-art" style="background:linear-gradient(160deg,#EFE4FA,#D9C6F0)">
+      <svg width="205" height="200" viewBox="0 0 205 200">
+        <rect x="46" y="34" width="112" height="132" rx="20" fill="#fff"/>
+        <rect x="64" y="58" width="76" height="9" rx="4.5" fill="#EFE4FA"/>
+        <rect x="64" y="78" width="58" height="9" rx="4.5" fill="#F1E7DE"/>
+        <g transform="translate(64,102)">
+          <circle cx="9" cy="9" r="9" fill="#8FD9A8"/>
+          <path d="M5 9l3 3 5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="26" y="4.5" width="50" height="9" rx="4.5" fill="#F1E7DE"/>
+        </g>
+        <g transform="translate(64,130)">
+          <circle cx="9" cy="9" r="9" fill="#F4915C"/>
+          <path d="M9 4.5v9M4.5 9h9" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+          <rect x="26" y="4.5" width="40" height="9" rx="4.5" fill="#F1E7DE"/>
+        </g>
+      </svg>
+    </div>
+    <div class="ob-copy">
+      <h2>Keep their health<br>on record</h2>
+      <p>Vaccinations, vet visits, and reminders — private to you, and never lost in a drawer.</p>
+    </div>
+    <div class="ob-dots"><span></span><span></span><span class="on"></span></div>
+    <div class="ob-actions">
+      <button class="btn btn-ghost" onclick="go('ob2')">Back</button>
+      <button class="btn btn-primary" onclick="go('auth')">Get started</button>
+    </div>
+  </section>
+
+  <!-- AUTH CHOICE -->
+  <section class="screen" id="auth">
+    <div class="ob-art" style="background:linear-gradient(160deg,#FFEBDB,#FFDCC4);flex:0 0 250px">
+      <svg width="150" height="150" viewBox="0 0 24 24" fill="#F4915C" opacity=".85">
+        <ellipse cx="12" cy="17.5" rx="5.4" ry="4.3"/>
+        <ellipse cx="5.3" cy="12.4" rx="2.5" ry="3.1"/>
+        <ellipse cx="18.7" cy="12.4" rx="2.5" ry="3.1"/>
+        <ellipse cx="8.9" cy="6.6" rx="2.4" ry="3"/>
+        <ellipse cx="15.1" cy="6.6" rx="2.4" ry="3"/>
+      </svg>
+    </div>
+    <div class="auth-title">
+      <h2>Welcome to PetSocial</h2>
+      <p>Create an account for you and your pets</p>
+    </div>
+    <button class="btn btn-primary" style="width:100%">Sign up with email</button>
+    <button class="btn btn-outline" style="width:100%">I already have an account</button>
+    <p class="auth-legal">By continuing you agree to our<br><u>Terms</u> and <u>Privacy Policy</u>.</p>
+  </section>
+</div>
+
+<p class="hint">Tap <code>Next</code> / <code>Skip</code> to move through. Splash auto-advances after 1.8s.</p>
+
+<script>
+  function go(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+  setTimeout(() => {
+    if (document.getElementById('splash').classList.contains('active')) go('ob1');
+  }, 1800);
+</script>
+</body>
+</html>
