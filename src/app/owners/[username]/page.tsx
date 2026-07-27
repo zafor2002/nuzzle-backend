@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { logout } from "@/app/actions/auth";
 import { FollowButton } from "./follow-button";
@@ -87,28 +88,55 @@ export default async function OwnerProfilePage({
         )}
       </div>
 
-      {owner.bio && !owner.isAnonymous && <p>{owner.bio}</p>}
+      {owner.bio && !owner.isAnonymous && <p className="text-sm leading-relaxed">{owner.bio}</p>}
 
-      <p className="text-sm text-muted">
-        <span className="font-medium text-foreground">{owner._count.followers}</span> followers ·{" "}
-        <span className="font-medium text-foreground">{owner._count.following}</span> following
-      </p>
+      <Card padded={false} className="flex py-3">
+        {[
+          { label: "Pets", value: owner.pets.length },
+          { label: "Followers", value: owner._count.followers },
+          { label: "Following", value: owner._count.following },
+        ].map((stat) => (
+          <div key={stat.label} className="flex-1 text-center">
+            <p className="text-base font-bold">{stat.value}</p>
+            <p className="text-[11.5px] text-muted">{stat.label}</p>
+          </div>
+        ))}
+      </Card>
 
-      {owner.pets.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="font-medium">Pets</h2>
-          {owner.pets.map((pet) => (
-            <Link key={pet.id} href={`/pets/${pet.id}`}>
-              <Card className="flex items-center gap-3 transition-colors hover:bg-muted-bg">
-                <Avatar name={pet.name} src={pet.isAnonymous ? null : pet.avatarUrl} size="sm" />
-                <span>
-                  {pet.name} <span className="text-sm text-muted">({pet.species})</span>
-                </span>
-              </Card>
+      <section>
+        <div className="mb-2 flex items-center">
+          <h2 className="flex-1 text-[13px] font-bold text-muted">Pets</h2>
+          {isSelf && (
+            <Link href="/pets/new" className="text-[11.5px] font-bold text-primary">
+              + Add pet
             </Link>
-          ))}
+          )}
         </div>
-      )}
+
+        {owner.pets.length === 0 ? (
+          <EmptyState icon="pawprint" title={isSelf ? "No pets yet" : "No pets to show"}>
+            {isSelf
+              ? "Add a pet to give them their own profile and followers."
+              : `${displayName} hasn't added any pets yet.`}
+          </EmptyState>
+        ) : (
+          <div className="-mx-6 flex gap-2.5 overflow-x-auto px-6 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {owner.pets.map((pet) => (
+              <Link
+                key={pet.id}
+                href={`/pets/${pet.id}`}
+                className="w-[150px] shrink-0 rounded-md border border-border bg-card p-3.5 transition-colors hover:bg-muted-bg"
+              >
+                <Avatar name={pet.name} src={pet.isAnonymous ? null : pet.avatarUrl} size="lg" />
+                <p className="mt-2.5 truncate text-sm font-bold">{pet.name}</p>
+                <p className="mt-0.5 truncate text-[11.5px] text-muted">
+                  {pet.breed || pet.species}
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { EmptyState } from "@/components/ui/empty-state";
 import { isHidden } from "@/lib/visibility";
 
@@ -42,64 +44,93 @@ export default async function PetProfilePage({
         &larr; Back
       </Link>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Avatar name={pet.name} src={pet.avatarUrl} size="lg" />
-          <div>
-            <h1 className="text-2xl font-semibold">{pet.name}</h1>
-            <p className="text-sm text-muted">
-              {pet.species}
-              {pet.breed ? ` · ${pet.breed}` : ""}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3.5">
+          <Avatar name={pet.name} src={pet.avatarUrl} size="xl" />
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold">{pet.name}</h1>
+            <p className="mt-0.5 truncate text-[11.5px] text-muted">
+              {ownerIsHidden ? (
+                "Anonymous owner"
+              ) : (
+                <>
+                  owned by{" "}
+                  <Link href={`/owners/${pet.owner.username}`} className="font-bold text-primary">
+                    @{pet.owner.username}
+                  </Link>
+                </>
+              )}
             </p>
           </div>
         </div>
         {isOwner && (
           <Link href={`/pets/${pet.id}/edit`}>
-            <Button variant="secondary">Edit</Button>
+            <Button variant="secondary" size="sm">
+              Edit
+            </Button>
           </Link>
         )}
       </div>
 
-      {pet.bio && <p>{pet.bio}</p>}
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="info">{pet.species}</Badge>
+        {pet.breed && <Badge variant="muted">{pet.breed}</Badge>}
+        {pet.isAnonymous && <Badge variant="muted">anonymous</Badge>}
+      </div>
 
-      <p className="text-sm text-muted">
-        {ownerIsHidden ? (
-          "Managed by an anonymous owner"
-        ) : (
-          <>
-            Owned by{" "}
-            <Link href={`/owners/${pet.owner.username}`} className="text-primary underline">
-              {pet.owner.displayName}
-            </Link>
-          </>
-        )}
-      </p>
+      {pet.bio && <p className="text-sm leading-relaxed">{pet.bio}</p>}
 
       {isOwner && (
-        <section className="flex flex-col gap-3 border-t border-border pt-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium">Health log</h2>
-            <Link href={`/pets/${pet.id}/health/new`}>
-              <Button variant="secondary">Add entry</Button>
-            </Link>
-          </div>
+        <div className="flex gap-2.5">
+          <Link href={`/pets/${pet.id}/health/new`} className="flex-1">
+            <Button variant="secondary" size="sm" className="w-full">
+              <Icon name="cross" className="h-4 w-4" /> Add health entry
+            </Button>
+          </Link>
+          <Link href="/vet" className="flex-1">
+            <Button variant="secondary" size="sm" className="w-full">
+              <Icon name="calendar" className="h-4 w-4" /> Book a vet
+            </Button>
+          </Link>
+        </div>
+      )}
 
-          {healthLogs.length === 0 && <EmptyState>No health logs yet.</EmptyState>}
+      {isOwner && (
+        <section className="flex flex-col gap-2.5 border-t border-border pt-4">
+          <h2 className="text-[13px] font-bold text-muted">Health log</h2>
+
+          <Card
+            padded={false}
+            className="flex items-center gap-2.5 border-[#F7DCC8] bg-[#FEF3EB] p-3.5"
+          >
+            <Icon name="cross" className="h-5 w-5 shrink-0 text-primary" />
+            <p className="text-[11.5px] leading-relaxed">
+              Only you can see this. Health records never appear on the public profile.
+            </p>
+          </Card>
+
+          {healthLogs.length === 0 && (
+            <EmptyState icon="cross" title="No entries yet">
+              Track vaccines, medication, weight and vet visits here.
+            </EmptyState>
+          )}
 
           {healthLogs.map((log) => (
-            <div key={log.id} className="rounded-md border border-border px-3 py-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{log.title}</span>
-                <span className="text-xs text-muted">{new Date(log.date).toLocaleDateString()}</span>
+            <Card key={log.id} padded={false} className="p-3.5">
+              <div className="mb-1.5 flex items-center gap-2">
+                <Badge variant="muted">{log.type.replace("_", " ")}</Badge>
+                <span className="ml-auto shrink-0 text-[11.5px] text-muted">
+                  {new Date(log.date).toLocaleDateString()}
+                </span>
               </div>
-              <Badge variant="muted">{log.type.replace("_", " ")}</Badge>
-              {log.notes && <p className="mt-1">{log.notes}</p>}
+              <p className="text-sm font-bold">{log.title}</p>
+              {log.notes && <p className="mt-1 text-[11.5px] leading-relaxed text-muted">{log.notes}</p>}
               {log.reminderAt && (
-                <p className="mt-1 text-xs text-primary">
+                <p className="mt-1.5 text-[11.5px] font-semibold text-primary">
                   Reminder: {new Date(log.reminderAt).toLocaleDateString()}
                 </p>
               )}
-            </div>
+            </Card>
           ))}
         </section>
       )}

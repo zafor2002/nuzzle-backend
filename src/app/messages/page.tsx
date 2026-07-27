@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Shell } from "@/components/shell";
 
 export default async function MessagesPage() {
@@ -45,11 +46,10 @@ export default async function MessagesPage() {
   return (
     <Shell>
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">Messages</h1>
+        <PageHeader title="Messages" />
 
         {list.length === 0 && (
-          <EmptyState>
-            No conversations yet.{" "}
+          <EmptyState icon="chat" title="No conversations yet">
             <Link href="/explore" className="text-primary underline">
               Explore
             </Link>{" "}

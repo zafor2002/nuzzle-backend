@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { Shell } from "@/components/shell";
 
 const CATEGORIES = ["food", "toys", "beds", "health", "accessories", "other"] as const;
@@ -25,32 +27,29 @@ export default async function MarketplacePage({
   return (
     <Shell>
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Marketplace</h1>
-          <Link href="/marketplace/new">
-            <Button>Sell something</Button>
-          </Link>
-        </div>
-
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link
-            href="/marketplace"
-            className={`rounded-full border border-border px-3 py-1 ${!category ? "bg-primary text-primary-foreground" : "hover:bg-muted-bg"}`}
-          >
-            All
-          </Link>
-          {CATEGORIES.map((c) => (
-            <Link
-              key={c}
-              href={`/marketplace?category=${c}`}
-              className={`rounded-full border border-border px-3 py-1 capitalize ${category === c ? "bg-primary text-primary-foreground" : "hover:bg-muted-bg"}`}
-            >
-              {c}
+        <PageHeader
+          title="Marketplace"
+          action={
+            <Link href="/marketplace/new">
+              <Button size="sm">Sell</Button>
             </Link>
-          ))}
-        </div>
+          }
+        />
 
-        {listings.length === 0 && <EmptyState>No listings yet.</EmptyState>}
+        <FilterChips
+          active={category ?? "all"}
+          options={[
+            { label: "All", value: "all" },
+            ...CATEGORIES.map((c) => ({ label: c, value: c })),
+          ]}
+          hrefFor={(v) => (v === "all" ? "/marketplace" : `/marketplace?category=${v}`)}
+        />
+
+        {listings.length === 0 && (
+          <EmptyState icon="cart" title="Nothing listed yet">
+            Pet gear people are selling will show up here.
+          </EmptyState>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           {listings.map((listing) => (
@@ -77,9 +76,10 @@ export default async function MarketplacePage({
                     </span>
                   )}
                 </div>
-                <div className="flex flex-col gap-0.5 p-2.5">
-                  <p className="truncate text-sm font-semibold">{listing.title}</p>
-                  <p className="font-bold">${listing.price.toFixed(2)}</p>
+                <div className="flex flex-col gap-1 p-2.5">
+                  <p className="text-sm font-bold">${listing.price.toFixed(2)}</p>
+                  <p className="line-clamp-2 text-[11.5px] leading-snug">{listing.title}</p>
+                  <p className="text-[11.5px] capitalize text-muted">{listing.category}</p>
                 </div>
               </Card>
             </Link>

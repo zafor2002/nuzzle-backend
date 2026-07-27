@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { ResolveButton } from "./resolve-button";
 import { Shell } from "@/components/shell";
 import { isHidden } from "@/lib/visibility";
@@ -25,14 +26,20 @@ export default async function LostFoundPage() {
   return (
     <Shell>
       <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Lost & Found</h1>
-        <Link href="/lost-found/new">
-          <Button>Report a pet</Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Lost & Found"
+        action={
+          <Link href="/lost-found/new">
+            <Button size="sm">Report</Button>
+          </Link>
+        }
+      />
 
-      {posts.length === 0 && <EmptyState>No active reports right now.</EmptyState>}
+      {posts.length === 0 && (
+        <EmptyState icon="siren" title="No active reports">
+          Lost and found alerts from the community will appear here.
+        </EmptyState>
+      )}
 
       <div className="flex flex-col gap-4">
         {posts.map((post) => {

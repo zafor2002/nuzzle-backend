@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Shell } from "@/components/shell";
 
 export default async function CommunitiesPage() {
@@ -14,22 +16,33 @@ export default async function CommunitiesPage() {
   return (
     <Shell>
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">Communities</h1>
+        <PageHeader title="Communities" back="/explore" />
 
-        {groups.length === 0 && <EmptyState>No communities yet.</EmptyState>}
+        <p className="-mt-2 text-[12.5px] leading-relaxed text-muted">
+          Grouped automatically from the species of every pet on PetSocial.
+        </p>
 
-        <div className="flex flex-col gap-2">
-          {groups.map((group) => (
-            <Link key={group.species} href={`/communities/${encodeURIComponent(group.species)}`}>
-              <Card className="flex items-center justify-between transition-colors hover:bg-muted-bg">
-                <span className="font-medium">🐾 {group.species}</span>
-                <span className="text-sm text-muted">
-                  {group._count._all} {group._count._all === 1 ? "pet" : "pets"}
-                </span>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        {groups.length === 0 ? (
+          <EmptyState icon="pawprint" title="No communities yet">
+            Communities appear as soon as pets are added.
+          </EmptyState>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {groups.map((group) => (
+              <Link key={group.species} href={`/communities/${encodeURIComponent(group.species)}`}>
+                <Card padded={false} className="flex items-center gap-3 p-3 transition-colors hover:bg-muted-bg">
+                  <Avatar name={group.species} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold">{group.species}</p>
+                    <p className="mt-0.5 text-[11.5px] text-muted">
+                      {group._count._all} {group._count._all === 1 ? "pet" : "pets"}
+                    </p>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </Shell>
   );

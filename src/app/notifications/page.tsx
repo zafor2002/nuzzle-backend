@@ -4,12 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { markAllRead } from "@/app/actions/notifications";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Icon } from "@/components/ui/icon";
+import { Icon, type IconName } from "@/components/ui/icon";
+import { PageHeader } from "@/components/ui/page-header";
+import { Shell } from "@/components/shell";
 
-const ICONS: Record<string, { name: Parameters<typeof Icon>[0]["name"]; className: string }> = {
-  like: { name: "heart", className: "text-danger" },
-  comment: { name: "comment", className: "text-primary" },
-  follow: { name: "user", className: "text-success" },
+// Badge colour per notification type, matching the prototype's activity rows.
+const KINDS: Record<string, { icon: IconName; bg: string }> = {
+  like: { icon: "heart", bg: "bg-danger" },
+  comment: { icon: "comment", bg: "bg-primary" },
+  follow: { icon: "user", bg: "bg-success" },
 };
 
 export default async function NotificationsPage() {
@@ -31,38 +34,56 @@ export default async function NotificationsPage() {
   const hasUnread = notifications.some((n) => !n.isRead);
 
   return (
-    <main className="mx-auto flex w-full min-h-[calc(100vh-65px)] max-w-lg flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Notifications</h1>
-        {hasUnread && (
-          <form action={markAllRead}>
-            <Button type="submit" variant="secondary">
-              Mark all read
-            </Button>
-          </form>
+    <Shell>
+      <div className="flex flex-col gap-4">
+        <PageHeader
+          title="Activity"
+          action={
+            hasUnread ? (
+              <form action={markAllRead}>
+                <Button type="submit" variant="secondary" size="sm">
+                  Mark all read
+                </Button>
+              </form>
+            ) : undefined
+          }
+        />
+
+        {notifications.length === 0 ? (
+          <EmptyState icon="bell" title="Nothing yet">
+            Likes, comments and new followers will show up here.
+          </EmptyState>
+        ) : (
+          <div className="flex flex-col">
+            {notifications.map((n) => {
+              const kind = KINDS[n.type];
+              return (
+                <div
+                  key={n.id}
+                  className={`-mx-4 flex items-start gap-3 border-b border-border px-4 py-3.5 last:border-b-0 ${
+                    n.isRead ? "" : "bg-muted-bg/60"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${
+                      kind?.bg ?? "bg-muted"
+                    }`}
+                  >
+                    <Icon name={kind?.icon ?? "bell"} className="h-[18px] w-[18px]" filled={n.type === "like"} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm leading-snug">{n.message}</p>
+                    <p className="mt-1 text-[11.5px] text-muted">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  {!n.isRead && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
-
-      {notifications.length === 0 && <EmptyState>No notifications yet.</EmptyState>}
-
-      <div className="flex flex-col gap-2">
-        {notifications.map((n) => (
-          <div
-            key={n.id}
-            className={`flex items-start gap-3 rounded-md border border-border px-4 py-3 text-sm ${n.isRead ? "" : "bg-muted-bg"}`}
-          >
-            <Icon
-              name={ICONS[n.type]?.name ?? "bell"}
-              className={`h-5 w-5 shrink-0 ${ICONS[n.type]?.className ?? "text-muted"}`}
-              filled={n.type === "like"}
-            />
-            <div>
-              <p>{n.message}</p>
-              <p className="mt-1 text-xs text-muted">{new Date(n.createdAt).toLocaleString()}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </main>
+    </Shell>
   );
 }

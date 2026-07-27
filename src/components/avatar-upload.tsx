@@ -46,8 +46,15 @@ export function AvatarUpload({
   return (
     <div className="flex items-center gap-4">
       <Avatar name={fallbackName} src={url || null} size="lg" />
-      <div className="flex flex-col gap-1">
-        <input type="file" accept="image/*" onChange={handleFileChange} className="text-sm" />
+      {/* min-w-0 + a constrained file input: the native control has a wide
+          intrinsic size that otherwise pushes the whole form past the viewport. */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="w-full max-w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-muted-bg file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-foreground"
+        />
         {uploading && <p className="text-sm text-muted">Uploading...</p>}
         {error && <p className="text-sm text-danger">{error}</p>}
       </div>
