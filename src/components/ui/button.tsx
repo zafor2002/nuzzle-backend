@@ -23,7 +23,8 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 font-semibold transition-[transform,opacity,background-color] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      // whitespace-nowrap: the fixed height means wrapped label text overflows the button
+      className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-semibold transition-[transform,opacity,background-color] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
       {...props}
     />
   );

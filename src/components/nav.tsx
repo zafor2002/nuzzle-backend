@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { logout } from "@/app/actions/auth";
-import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { BottomNav } from "@/components/bottom-nav";
@@ -32,28 +30,37 @@ export async function Nav() {
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-3">
-          <Link href="/" className="shrink-0 text-lg font-semibold text-primary">
-            🐾 PetSocial
+          <Link href="/" className="flex shrink-0 items-center gap-1.5 text-[19px] font-extrabold text-primary">
+            <Icon name="pawprint" className="h-6 w-6" filled />
+            PetSocial
           </Link>
 
           {owner ? (
-            <div className="flex shrink-0 items-center gap-3">
-              <Link href="/messages" className="relative text-muted hover:text-foreground">
-                <Icon name="send" className="h-6 w-6" />
+            <div className="flex shrink-0 items-center gap-1">
+              <Link
+                href="/messages"
+                aria-label="Messages"
+                className="relative flex h-[34px] w-[34px] items-center justify-center rounded-xl text-foreground hover:bg-muted-bg"
+              >
+                <Icon name="chat" className="h-5 w-5" />
                 {unreadMessages > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium text-white">
+                  <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium text-white">
                     {unreadMessages}
                   </span>
                 )}
               </Link>
-              <Link href={`/owners/${owner.username}`} title={owner.displayName}>
-                <Avatar name={owner.displayName} src={owner.isAnonymous ? null : owner.avatarUrl} size="sm" />
+              <Link
+                href="/notifications"
+                aria-label="Activity"
+                className="relative flex h-[34px] w-[34px] items-center justify-center rounded-xl text-foreground hover:bg-muted-bg"
+              >
+                <Icon name="bell" className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium text-white">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
-              <form action={logout}>
-                <button type="submit" className="text-sm text-muted hover:text-foreground">
-                  Log out
-                </button>
-              </form>
             </div>
           ) : (
             <div className="flex shrink-0 items-center gap-3 text-sm">

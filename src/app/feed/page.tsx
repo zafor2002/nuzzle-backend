@@ -38,8 +38,6 @@ export default async function FeedPage() {
   return (
     <Shell>
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">Home</h1>
-
         {isEmptyFollowingFeed && (
           <EmptyState icon="pawprint" title="Your feed is quiet">
             No posts yet from people you follow.{" "}

@@ -34,21 +34,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #221c22;
-    --foreground: #f3eae6;
-    --card: #2d262c;
-    --border: #3b323a;
-    --muted: #bba9a2;
-    --muted-bg: #2a2228;
-    --primary: #f2a06b;
-    --primary-foreground: #ffffff;
-    --danger: #f0708a;
-    --danger-bg: #3a2229;
-    --success: #6fcb93;
-    --success-bg: #1e3327;
-  }
+/* Light-only by design: the approved prototype has no dark variant, and a second
+   palette would need verifying on every screen. Restore by re-adding a
+   `@media (prefers-color-scheme: dark)` block overriding the :root tokens. */
+:root {
+  color-scheme: light;
 }
 
 * {

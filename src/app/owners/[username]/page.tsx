@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { logout } from "@/app/actions/auth";
 import { FollowButton } from "./follow-button";
 
 export default async function OwnerProfilePage({
@@ -48,18 +50,32 @@ export default async function OwnerProfilePage({
         &larr; Back to feed
       </Link>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <Avatar name={displayName} src={owner.isAnonymous ? null : owner.avatarUrl} size="lg" />
-          <div>
-            <h1 className="text-xl font-semibold">{displayName}</h1>
-            <p className="text-sm text-muted">@{owner.username}</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-semibold">{displayName}</h1>
+            <p className="truncate text-sm text-muted">@{owner.username}</p>
           </div>
         </div>
         {isSelf && (
-          <Link href={`/owners/${owner.username}/edit`}>
-            <Button variant="secondary">Edit profile</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/owners/${owner.username}/edit`}>
+              <Button variant="secondary" size="sm">
+                Edit profile
+              </Button>
+            </Link>
+            <form action={logout}>
+              <button
+                type="submit"
+                aria-label="Log out"
+                title="Log out"
+                className="flex h-[34px] w-[34px] items-center justify-center rounded-xl text-muted hover:bg-muted-bg hover:text-foreground"
+              >
+                <Icon name="logout" className="h-5 w-5" />
+              </button>
+            </form>
+          </div>
         )}
         {!isSelf && user && (
           <div className="flex items-center gap-2">
