@@ -55,8 +55,22 @@ profile).
   never "fetch then check in JS."
 - **Mobile-only design.** Desktop-specific layout (sidebars, `lg:`/`xl:` breakpoint
   branching) was deliberately removed (commit `7e3bbfb`) — don't reintroduce it
-  without being asked. `Shell` is a plain centered single column now;
+  without being asked. `Shell` renders a centered single-column `<main>`;
   `BottomNav` is always visible, not just below `lg`.
+- **Light theme only.** The dark palette was removed (commit `b8a9100`) because the
+  approved prototype has no dark variant and a second palette would need verifying
+  on every screen. Restore by re-adding a `@media (prefers-color-scheme: dark)`
+  block overriding the `:root` tokens in `globals.css`.
+- **UI matches `prototypes/app.html`** — that file is the reference for every screen.
+  Build screens by composing the primitives in `src/components/ui/`: `PageHeader`
+  (back chevron + title + action), `FilterChips` (scrolling pill filters, rendered as
+  links so filtering needs no client state), `Card` (padding is the `padded` prop,
+  *not* a `p-*` className — Tailwind orders padding utilities by value, so a
+  className override silently loses), `Avatar` (pastel tones, two-letter initials),
+  `Button` (`size` md/sm), `Badge`, `EmptyState` (icon + title + action), `Icon`.
+- Posts render as photo cards (`PostCard`): avatar + author + breed·date header,
+  full-bleed media, then a horizontal like/comment row. The old Reddit-style
+  vote-arrow column is gone.
 - Generated Prisma client (`src/generated/prisma/`) is git-ignored; regenerated via
   the `postinstall` script (`prisma generate`) on every `npm install`. If a Vercel
   build ever fails with "Module not found: Can't resolve '@/generated/prisma/client'",
@@ -101,3 +115,8 @@ LaTeX distribution was available when they were written — see
 `documentation/README.md` to compile): project overview, system architecture,
 database design (all 16 Prisma models), feature specification, API/Server Actions
 reference, deployment guide, user guide, security & privacy.
+
+`prototypes/` holds backend-free HTML prototypes you can open directly in a browser:
+`app.html` (all 28 screens, with a screen index sidebar — the visual reference the
+app is built against), plus `onboarding.html`, `stories.html` and `reels.html` for
+features that don't exist yet. They live outside `src/`, so they never affect the build.
