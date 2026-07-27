@@ -10,6 +10,7 @@ or its build.
 
 | File | Prototype | Why it exists |
 |---|---|---|
+| **`app.html`** | **The whole app — all 28 screens** | Full clickable walkthrough of every shipped feature, with a screen index sidebar |
 | `onboarding.html` | Splash → 3 intro pages → sign-up choice | The real app drops users straight onto `/signup` with no introduction |
 | `stories.html` | Story ring row on the feed → full-screen viewer | Not built — listed as "Not Yet Implemented" in the feature spec |
 | `reels.html` | Full-screen vertical video feed with action rail | Not built — same |
@@ -29,6 +30,12 @@ desktop screen.
 
 ## What's interactive
 
+- **app** — a sidebar lists all 28 screens, grouped by feature; click any one to jump
+  straight to it, or navigate normally via the bottom tabs, the create FAB, and every
+  card/row. Working state: like counts, save/bookmark, follow toggles, category chip
+  filters, both anonymity switches, appendable comments and chat messages, and vet slot
+  booking (grey slots are taken and refuse selection; Confirm stays disabled until you
+  pick a free one).
 - **onboarding** — splash auto-advances after 1.8s; `Next` / `Back` / `Skip` all work
 - **stories** — tap a story ring to open the viewer; inside, tap the right side to
   advance, left side to go back, `×` to close. Segments auto-advance every 4.2s with
