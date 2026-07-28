@@ -83,6 +83,38 @@ test.describe("core flows", () => {
     expect(stacked).toBe(false);
   });
 
+  test("chrome stays in the mobile column on a wide screen", async ({ page }) => {
+    // The app is mobile-only: on a desktop window the bar may span the viewport
+    // but its contents must line up with the feed column, not spread edge to edge.
+    await signUp(page);
+    await page.setViewportSize({ width: 1900, height: 900 });
+    await page.goto("/feed");
+
+    const widths = await page.evaluate(() => {
+      const nav = document.querySelector('nav[aria-label="Primary"]');
+      const inner = nav?.firstElementChild;
+      const main = document.querySelector("main");
+      const header = document.querySelector("header > div");
+      return {
+        main: main ? Math.round(main.getBoundingClientRect().width) : null,
+        header: header ? Math.round(header.getBoundingClientRect().width) : null,
+        navContents: inner ? Math.round(inner.getBoundingClientRect().width) : null,
+      };
+    });
+
+    // Assert the relationship, not a pixel count: the fixture emulates a phone,
+    // so the layout viewport is not the window width. What matters is that the
+    // chrome tracks the content column instead of spanning the window.
+    expect(widths.main).toBeGreaterThan(0);
+    expect(widths.header, "header contents should match the feed column").toBe(widths.main);
+    expect(widths.navContents, "bottom nav contents should match the feed column").toBe(
+      widths.main
+    );
+    expect(widths.main, "content column should stay capped, not fill the window").toBeLessThanOrEqual(
+      512
+    );
+  });
+
   test("an uploaded image posts and renders", async ({ page }) => {
     await signUp(page);
     const caption = `with image ${Date.now()}`;

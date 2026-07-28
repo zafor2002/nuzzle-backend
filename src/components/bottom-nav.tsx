@@ -21,9 +21,13 @@ export function BottomNav({
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-around border-t border-border bg-background/90 px-2 pb-[calc(env(safe-area-inset-bottom,0px)+6px)] pt-2 backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 pb-[calc(env(safe-area-inset-bottom,0px)+6px)] pt-2 backdrop-blur"
       aria-label="Primary"
     >
+      {/* The bar spans the viewport so its border reaches the edges, but its
+          contents share Shell's max-w-lg column — otherwise the tabs spread
+          across a desktop window while the feed above stays narrow. */}
+      <div className="mx-auto flex w-full max-w-lg items-center justify-around px-2">
       <Link
         href="/feed"
         className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-semibold ${isActive("/feed") ? "text-primary" : "text-muted"}`}
@@ -62,6 +66,7 @@ export function BottomNav({
         <Avatar name={displayName} src={avatarUrl} size="sm" />
         Profile
       </Link>
+      </div>
     </nav>
   );
 }
