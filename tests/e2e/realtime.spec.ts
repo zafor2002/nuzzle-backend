@@ -35,7 +35,12 @@ test("a sent message appears live in the recipient's open thread", async ({ brow
   await expect(alicePage.getByText(body)).toBeVisible();
 
   // Bob's page must show it without any navigation or reload on his side.
-  await expect(bobPage.getByText(body)).toBeVisible({ timeout: 30_000 });
+  //
+  // Generous timeout on purpose: this is the one assertion that depends on
+  // Supabase's Realtime service rather than our own server. Late in a full run —
+  // after every test that visited /messages has opened a socket — the first
+  // event can take noticeably longer to arrive than it does in isolation.
+  await expect(bobPage.getByText(body)).toBeVisible({ timeout: 90_000 });
 
   await aliceCtx.close();
   await bobCtx.close();
