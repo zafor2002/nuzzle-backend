@@ -42,9 +42,17 @@ export async function signup(formData: FormData) {
   }
   const { email, password, username, displayName } = parsed.data;
 
-  const existing = await prisma.owner.findUnique({ where: { username } });
-  if (existing) {
-    return { error: "That username is already taken." };
+  // Wrapped because a transient database error here would otherwise throw up the
+  // generic error boundary, which reads as "the app is broken" rather than
+  // "try again" — and this runs before the auth user exists, so a retry is safe.
+  try {
+    const existing = await prisma.owner.findUnique({ where: { username } });
+    if (existing) {
+      return { error: "That username is already taken." };
+    }
+  } catch (err) {
+    console.error("signup: username lookup failed", err);
+    return { error: "Could not reach the database. Please try again." };
   }
 
   const supabase = await createClient();

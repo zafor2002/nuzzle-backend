@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { isHidden } from "@/lib/visibility";
-import { isOwnMediaUrl, validateImageFile, MAX_UPLOAD_BYTES } from "@/lib/media";
+import {
+  isOwnMediaUrl,
+  validateImageFile,
+  validateVideoFile,
+  MAX_UPLOAD_BYTES,
+  MAX_VIDEO_BYTES,
+} from "@/lib/media";
 
 describe("isHidden — anonymity resolves at owner OR pet level", () => {
   const publicOwner = { isAnonymous: false };
@@ -65,5 +71,25 @@ describe("validateImageFile", () => {
 
   it("accepts a file exactly at the limit", () => {
     expect(validateImageFile(file("image/jpeg", MAX_UPLOAD_BYTES))).toBeNull();
+  });
+});
+
+describe("validateVideoFile", () => {
+  const file = (type: string, size: number) => ({ type, size }) as File;
+
+  it("accepts an MP4 within the limit", () => {
+    expect(validateVideoFile(file("video/mp4", 1024 * 1024))).toBeNull();
+  });
+
+  it("rejects a format browsers may not play", () => {
+    expect(validateVideoFile(file("video/x-msvideo", 1024))).toMatch(/MP4, WebM or MOV/);
+  });
+
+  it("rejects an image sent to the video path", () => {
+    expect(validateVideoFile(file("image/png", 1024))).toMatch(/MP4, WebM or MOV/);
+  });
+
+  it("rejects an oversized video", () => {
+    expect(validateVideoFile(file("video/mp4", MAX_VIDEO_BYTES + 1))).toMatch(/50MB/);
   });
 });

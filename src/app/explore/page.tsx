@@ -10,6 +10,7 @@ import { FollowButton } from "@/app/owners/[username]/follow-button";
 import { Shell } from "@/components/shell";
 
 const SHORTCUTS: { href: string; label: string; icon: IconName }[] = [
+  { href: "/reels", label: "Reels", icon: "camera" },
   { href: "/communities", label: "Communities", icon: "pawprint" },
   { href: "/adoption", label: "Adopt", icon: "heart" },
   { href: "/vet", label: "Book a vet", icon: "cross" },

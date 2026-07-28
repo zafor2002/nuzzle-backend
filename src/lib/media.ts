@@ -34,6 +34,47 @@ export const mediaUrlSchema = z
   .refine(isOwnMediaUrl, { message: "Images must be uploaded through the app." })
   .optional();
 
+/**
+ * Video limits for Reels.
+ *
+ * Supabase Storage stores files but does not transcode them, so whatever is
+ * uploaded is what every viewer downloads. These caps keep that honest: web
+ * formats only, and small enough to play on a phone connection. Raising them
+ * meaningfully means putting a transcoding service (Mux, Cloudflare Stream) in
+ * front of Storage rather than changing this number.
+ */
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const MAX_VIDEO_SECONDS = 90;
+export const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+
+export function validateVideoFile(file: File): string | null {
+  if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+    return "Please choose an MP4, WebM or MOV video.";
+  }
+  if (file.size > MAX_VIDEO_BYTES) {
+    return `That video is ${(file.size / 1024 / 1024).toFixed(0)}MB — the limit is 50MB.`;
+  }
+  return null;
+}
+
+/** Reads duration from the file itself; the size cap alone does not bound length. */
+export function readVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(video.duration);
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read that video."));
+    };
+    video.src = url;
+  });
+}
+
 /** Client-side guard so bad files are rejected before they reach Storage. */
 export function validateImageFile(file: File): string | null {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {

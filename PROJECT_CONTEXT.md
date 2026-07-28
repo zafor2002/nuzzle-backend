@@ -25,9 +25,18 @@ affecting functionality (messaging/moderation still resolve to the real account)
 - Veterinary appointment booking (real slot availability, no double-booking)
 - Marketplace (buy/sell pet products, category filter)
 
-**Not built:** Stories, Reels, hashtags/search (the `Hashtag`/`HashtagsOnPosts`
-tables exist in the schema but nothing uses them), automated tests, real-time
-message delivery (page-revalidation based, not sockets).
+- Hashtags parsed from captions, linked, browsable at `/hashtags/[tag]`
+- Search across people, pets, hashtags and caption text (`/search`)
+- Private accounts (`Owner.isPrivate`), enforced at the query level
+- Stories (24h expiry, ring tray, viewer, per-viewer seen tracking)
+- Reels (short vertical video, snap feed, likes)
+- Real-time message delivery over Supabase Realtime
+
+**Not built:** follow *requests* — going private hides you from non-followers but
+existing followers keep access, and there is no approval queue. No video
+transcoding: Reels are served exactly as uploaded, which is why they are capped
+at 50MB / 90s (see `src/lib/media.ts`). Raising that meaningfully means putting
+Mux or Cloudflare Stream in front of Storage.
 
 ## Stack
 
@@ -81,12 +90,24 @@ profile).
 
 ## Testing approach
 
-No automated test suite exists. Every feature was verified during development with
-a disposable Playwright/Node script run against the real dev server and real
-Supabase DB (sign up real accounts, click through the actual flow, assert on
-rendered text/DOM), then the script was deleted and any test data cleaned up. If
-you build a new feature, follow the same discipline — build, typecheck, lint,
-build, then a real functional test — don't consider it done on a green build alone.
+`npm test` runs Vitest unit tests (`tests/unit/`). `npm run test:e2e` runs
+Playwright (`tests/e2e/`) against a **production build** — `next dev` recompiles
+each route on demand and turned a full pass into over an hour.
+
+Two things to preserve when adding E2E tests:
+- Accounts must be named `uitest*`; global teardown deletes rows by that prefix.
+  It removes application rows only — matching Supabase Auth users are left, as
+  deleting those needs a service-role key the app deliberately does not carry.
+- Import `test` from `./fixtures`, not `@playwright/test`. The fixture gives each
+  test a distinct `X-Forwarded-For` so the signup rate limiter stays fully active
+  instead of being disabled for testing. `rate-limit.spec.ts` deliberately uses
+  the plain `test` to prove the limiter still fires.
+
+Historical note: before the suite existed, every feature was verified with a
+disposable Playwright script run against the real dev server and Supabase, then
+deleted. That discipline still applies to new work: typecheck, lint, build, then
+exercise the feature for real — don't consider it done on a green build alone.
+Add the test to the suite now rather than deleting the script.
 
 ## Deployment
 

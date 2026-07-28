@@ -25,8 +25,21 @@ export function RealtimeMessages({
 
   useEffect(() => {
     const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
-    const channel = supabase
+    (async () => {
+      // The realtime socket authenticates separately from the REST client. Without
+      // handing it the user's access token it connects as `anon`, and the Message
+      // RLS policy — which only exposes rows to the two participants — correctly
+      // refuses to deliver anything.
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        await supabase.realtime.setAuth(data.session.access_token);
+      }
+      if (cancelled) return;
+
+      channel = supabase
       .channel(`messages:${ownerId}${otherId ? `:${otherId}` : ""}`)
       .on(
         "postgres_changes",
@@ -42,10 +55,12 @@ export function RealtimeMessages({
           router.refresh();
         }
       )
-      .subscribe();
+        .subscribe();
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
   }, [ownerId, otherId, router]);
 
