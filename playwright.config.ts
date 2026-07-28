@@ -26,7 +26,11 @@ export default defineConfig({
   webServer: {
     command: `npx next build && npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}/login`,
-    reuseExistingServer: true,
+    // Never reuse: the rate limiter keeps its counters in memory, so a server
+    // left running from an earlier run starts the next one with the signup
+    // limit already spent — which fails every test for reasons that have
+    // nothing to do with the code under test.
+    reuseExistingServer: false,
     timeout: 300_000,
   },
 });

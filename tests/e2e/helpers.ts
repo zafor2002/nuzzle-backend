@@ -22,7 +22,21 @@ export function newUser(displayName = "Test Person"): TestUser {
   };
 }
 
+let ipCounter = 0;
+
+/**
+ * Signup is limited to 5 per hour per IP. The per-test fixture IP is not enough
+ * on its own — several tests create two accounts, and the suite as a whole
+ * creates far more than five — so each signup presents its own address. The
+ * limiter itself stays fully active and is covered by rate-limit.spec.ts.
+ */
+function nextTestIp() {
+  ipCounter += 1;
+  return `10.${(ipCounter >> 16) & 255}.${(ipCounter >> 8) & 255}.${ipCounter & 255}`;
+}
+
 export async function signUp(page: Page, user = newUser()) {
+  await page.setExtraHTTPHeaders({ "x-forwarded-for": nextTestIp() });
   await page.goto("/signup");
   await page.fill('input[name="email"]', user.email);
   await page.fill('input[name="password"]', user.password);
