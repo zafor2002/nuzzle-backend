@@ -20,6 +20,7 @@ const PATHS: Record<string, string> = {
   check: "M5 12l5 5 9-10",
   siren: "M12 3L1 21h22L12 3zM12 10v5M12 18h.01",
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
+  lock: "M5 11h14v10H5zM8 11V7.5a4 4 0 018 0V11",
   cross: "M2 12h4l1.5-4 3 12 2.5-14 2 6h6.5",
   calendar: "M3 5h18v16H3zM3 10h18M8 3v4M16 3v4",
   cart: "M3 4h2.2l1 3M6.2 7h13.6l-1.5 8H8.5L6.2 7zM9 19a1.2 1.2 0 100 2.4A1.2 1.2 0 009 19zM17 19a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4z",

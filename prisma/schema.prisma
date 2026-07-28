@@ -19,6 +19,13 @@ model Owner {
   bio           String?
   isAnonymous   Boolean  @default(false) // hides owner identity across the whole app
   isPrivate     Boolean  @default(false)
+  // Notification preferences. One flag per notification type that actually
+  // exists — see notify() in src/lib/notify.ts, which drops writes for a type
+  // the recipient has switched off, so these are enforced server-side rather
+  // than only filtering what the notifications screen renders.
+  notifyLikes    Boolean @default(true)
+  notifyComments Boolean @default(true)
+  notifyFollows  Boolean @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

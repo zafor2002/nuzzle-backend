@@ -19,7 +19,7 @@ affecting functionality (messaging/moderation still resolve to the real account)
 - Breed/species communities (auto-derived from pet data, no separate table)
 - Lost & Found alerts
 - Pet health logs (owner-only, gated at the query level not just the UI)
-- Notifications (likes, comments, follows)
+- Notifications (likes, comments, follows), each type mutable per owner
 - Direct messages (also the contact method for Adoption and Marketplace listings)
 - Pet adoption listings (browse/filter by species, status lifecycle)
 - Veterinary appointment booking (real slot availability, no double-booking)
@@ -31,6 +31,8 @@ affecting functionality (messaging/moderation still resolve to the real account)
 - Stories (24h expiry, ring tray, viewer, per-viewer seen tracking)
 - Reels (short vertical video, snap feed, likes)
 - Real-time message delivery over Supabase Realtime
+- Settings (`/settings`): account details + password change, privacy toggles,
+  per-type notification preferences, log out
 
 **Not built:** follow *requests* — going private hides you from non-followers but
 existing followers keep access, and there is no approval queue. No video
@@ -123,11 +125,17 @@ Add the test to the suite now rather than deleting the script.
 
 - Re-enable Supabase email confirmation + configure custom SMTP before any public
   launch (both were disabled/left on defaults for local dev testing).
-- Rotate the Supabase DB password — it was pasted in plaintext during development
-  chat sessions at least twice.
-- `Owner.isPrivate` exists in the schema but is not enforced anywhere.
-- No server-side validation of uploaded file type/size beyond the browser's
-  `accept="image/*"` hint.
+- The Supabase DB password has been rotated locally; `DATABASE_URL` / `DIRECT_URL`
+  in Vercel must be updated to match or the deployed site fails with `P1000`.
+- Set file-size and MIME limits on the `post-media` bucket. `src/lib/media.ts`
+  validates uploads and `mediaUrlSchema` rejects foreign URLs, but the client-side
+  size cap is UX — the bucket itself is still the real boundary.
+- Changing your email or username is not implemented; `/settings/account` shows
+  both read-only and says so.
+- Account deletion is not implemented. Removing the `Owner` row would cascade the
+  application data but leave the Supabase Auth user behind — deleting that needs a
+  service-role key the app deliberately does not carry, and the leftover user could
+  still log in to a profile-less account.
 
 ## Where to look for more detail
 

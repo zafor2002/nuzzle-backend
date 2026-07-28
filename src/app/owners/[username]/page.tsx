@@ -68,6 +68,14 @@ export default async function OwnerProfilePage({
                 Edit profile
               </Button>
             </Link>
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              title="Settings"
+              className="flex h-[34px] w-[34px] items-center justify-center rounded-xl text-muted hover:bg-muted-bg hover:text-foreground"
+            >
+              <Icon name="settings" className="h-5 w-5" />
+            </Link>
             <form action={logout}>
               <button
                 type="submit"
