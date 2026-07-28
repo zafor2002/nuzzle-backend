@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { LikeButton } from "@/components/like-button";
 import { Icon } from "@/components/ui/icon";
+import { CaptionText } from "@/components/caption-text";
 import { isHidden } from "@/lib/visibility";
 
 type PostCardPost = {
@@ -99,7 +100,7 @@ export function PostCard({ post, currentUserId }: { post: PostCardPost; currentU
 
       {post.caption && (
         <p className="px-3.5 pb-3.5 text-sm leading-relaxed">
-          <span className="font-bold">{authorLabel}</span> {post.caption}
+          <span className="font-bold">{authorLabel}</span> <CaptionText caption={post.caption} />
         </p>
       )}
     </Card>

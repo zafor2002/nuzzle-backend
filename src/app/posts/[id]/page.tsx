@@ -7,6 +7,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { LikeButton } from "@/components/like-button";
 import { Icon } from "@/components/ui/icon";
+import { CaptionText } from "@/components/caption-text";
+import { canViewOwner } from "@/lib/privacy";
 import { Shell } from "@/components/shell";
 import { isHidden } from "@/lib/visibility";
 import { CommentForm } from "./comment-form";
@@ -34,6 +36,11 @@ export default async function PostDetailPage({
   });
 
   if (!post) {
+    notFound();
+  }
+
+  // A direct link must not bypass privacy: 404 rather than reveal existence.
+  if (!(await canViewOwner(post.owner, user?.id))) {
     notFound();
   }
 
@@ -104,7 +111,7 @@ export default async function PostDetailPage({
 
           {post.caption && (
             <p className="px-3.5 pb-3.5 text-sm leading-relaxed">
-              <span className="font-bold">{authorLabel}</span> {post.caption}
+              <span className="font-bold">{authorLabel}</span> <CaptionText caption={post.caption} />
             </p>
           )}
         </Card>

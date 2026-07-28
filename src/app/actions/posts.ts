@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { mediaUrlSchema } from "@/lib/media";
+import { extractHashtags } from "@/lib/hashtags";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -43,15 +44,25 @@ export async function createPost(formData: FormData) {
     }
   }
 
+  const tags = extractHashtags(caption);
+
   await prisma.post.create({
     data: {
       ownerId: user.id,
       petId: petId || null,
       caption: caption || null,
       mediaUrls: mediaUrl ? [mediaUrl] : [],
+      hashtags: {
+        create: tags.map((tag) => ({
+          hashtag: {
+            connectOrCreate: { where: { tag }, create: { tag } },
+          },
+        })),
+      },
     },
   });
 
   revalidatePath("/feed");
+  for (const tag of tags) revalidatePath(`/hashtags/${tag}`);
   redirect("/feed");
 }

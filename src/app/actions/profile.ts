@@ -13,6 +13,7 @@ const updateOwnerSchema = z.object({
   bio: z.string().trim().max(500).optional(),
   avatarUrl: mediaUrlSchema,
   isAnonymous: z.boolean(),
+  isPrivate: z.boolean(),
 });
 
 export async function updateOwnerProfile(formData: FormData) {
@@ -27,12 +28,13 @@ export async function updateOwnerProfile(formData: FormData) {
     bio: formData.get("bio") || undefined,
     avatarUrl: formData.get("avatarUrl") || undefined,
     isAnonymous: formData.get("isAnonymous") === "on",
+    isPrivate: formData.get("isPrivate") === "on",
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
-  const { displayName, bio, avatarUrl, isAnonymous } = parsed.data;
+  const { displayName, bio, avatarUrl, isAnonymous, isPrivate } = parsed.data;
 
   const owner = await prisma.owner.update({
     where: { id: user.id },
@@ -41,6 +43,7 @@ export async function updateOwnerProfile(formData: FormData) {
       bio: bio || null,
       ...(avatarUrl ? { avatarUrl } : {}),
       isAnonymous,
+      isPrivate,
     },
   });
 

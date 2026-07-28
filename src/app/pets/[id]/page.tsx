@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { EmptyState } from "@/components/ui/empty-state";
 import { isHidden } from "@/lib/visibility";
+import { canViewOwner } from "@/lib/privacy";
 
 export default async function PetProfilePage({
   params,
@@ -28,6 +29,11 @@ export default async function PetProfilePage({
   });
 
   if (!pet) {
+    notFound();
+  }
+
+  // A private owner's pets are not reachable by direct link either.
+  if (!(await canViewOwner(pet.owner, user?.id))) {
     notFound();
   }
 

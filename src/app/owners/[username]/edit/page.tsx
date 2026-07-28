@@ -30,6 +30,7 @@ export default async function EditOwnerProfilePage({
           bio={owner.bio ?? ""}
           avatarUrl={owner.avatarUrl}
           isAnonymous={owner.isAnonymous}
+          isPrivate={owner.isPrivate}
         />
       </Card>
     </main>

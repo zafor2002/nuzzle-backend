@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { visiblePostWhere } from "@/lib/privacy";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -41,7 +42,9 @@ export default async function CommunityPage({
   ).sort();
 
   const posts = await prisma.post.findMany({
-    where: { pet: { species, ...(breed ? { breed } : {}) } },
+    where: {
+      AND: [{ pet: { species, ...(breed ? { breed } : {}) } }, await visiblePostWhere(user?.id)],
+    },
     orderBy: { createdAt: "desc" },
     take: 30,
     include: {

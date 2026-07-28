@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
+import { RealtimeMessages } from "@/components/realtime-messages";
 import { Shell } from "@/components/shell";
 
 export default async function MessagesPage() {
@@ -47,6 +48,7 @@ export default async function MessagesPage() {
     <Shell>
       <div className="flex flex-col gap-4">
         <PageHeader title="Messages" />
+        <RealtimeMessages ownerId={user.id} />
 
         {list.length === 0 && (
           <EmptyState icon="chat" title="No conversations yet">

@@ -35,6 +35,10 @@ model Owner {
   adoptionListings AdoptionListing[]
   appointments  Appointment[]
   marketplaceListings MarketplaceListing[]
+  stories       Story[]
+  storyViews    StoryView[]
+  reels         Reel[]
+  reelLikes     ReelLike[]
 }
 
 model Pet {
@@ -53,6 +57,8 @@ model Pet {
 
   posts        Post[]
   healthLogs   HealthLog[]
+  stories      Story[]
+  reels        Reel[]
   lostFoundPosts LostFoundPost[]
   appointments Appointment[]
 
@@ -254,4 +260,62 @@ model MarketplaceListing {
   updatedAt   DateTime @updatedAt
 
   @@index([sellerId])
+}
+
+model Story {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  petId     String?
+  pet       Pet?     @relation(fields: [petId], references: [id], onDelete: SetNull)
+  mediaUrl  String
+  caption   String?
+  createdAt DateTime @default(now())
+  // Stories disappear after 24h. Stored rather than computed so the cutoff is
+  // fixed at creation time and queries can use a plain index on it.
+  expiresAt DateTime
+
+  views     StoryView[]
+
+  @@index([ownerId])
+  @@index([expiresAt])
+}
+
+model StoryView {
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  viewerId  String
+  viewer    Owner    @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+  viewedAt  DateTime @default(now())
+
+  @@id([storyId, viewerId])
+  @@index([viewerId])
+}
+
+model Reel {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  petId     String?
+  pet       Pet?     @relation(fields: [petId], references: [id], onDelete: SetNull)
+  videoUrl  String
+  caption   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  likes     ReelLike[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model ReelLike {
+  reelId    String
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([reelId, ownerId])
+  @@index([ownerId])
 }

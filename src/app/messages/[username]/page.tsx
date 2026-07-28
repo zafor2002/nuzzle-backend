@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { Shell } from "@/components/shell";
+import { RealtimeMessages } from "@/components/realtime-messages";
 import { MessageForm } from "./message-form";
 
 export default async function ChatPage({
@@ -88,6 +89,7 @@ export default async function ChatPage({
         </div>
 
         <MessageForm receiverId={other.id} />
+        <RealtimeMessages ownerId={user.id} otherId={other.id} />
       </div>
     </Shell>
   );

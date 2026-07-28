@@ -69,13 +69,13 @@ export default async function ExplorePage({
       <div className="flex flex-col gap-4">
         <PageHeader title="Explore" />
 
-        <form action="/explore" className="flex h-11 items-center gap-2 rounded-[14px] bg-muted-bg px-3.5">
+        <form action="/search" className="flex h-11 items-center gap-2 rounded-[14px] bg-muted-bg px-3.5">
           <Icon name="search" className="h-[18px] w-[18px] shrink-0 text-muted" />
           <input
             type="text"
             name="q"
             defaultValue={query}
-            placeholder="Pets, people, breeds…"
+            placeholder="People, pets, #tags, captions…"
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
           />
         </form>

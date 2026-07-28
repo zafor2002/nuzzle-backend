@@ -57,14 +57,27 @@ export async function signup(formData: FormData) {
     return { error: "Sign up failed — please try again." };
   }
 
-  await prisma.owner.create({
-    data: {
-      id: data.user.id,
-      email,
-      username,
-      displayName,
-    },
-  });
+  // The auth user exists by this point, so a failure here would otherwise throw
+  // up the generic error boundary and leave an account that cannot be used.
+  // Surface it as a form error instead; signing up again with the same email
+  // reuses the existing auth user and retries this insert.
+  try {
+    await prisma.owner.create({
+      data: {
+        id: data.user.id,
+        email,
+        username,
+        displayName,
+      },
+    });
+  } catch (err) {
+    const known = err as { code?: string };
+    if (known.code === "P2002") {
+      return { error: "That username or email is already registered. Try logging in." };
+    }
+    console.error("signup: failed to create owner profile", err);
+    return { error: "Could not finish creating your profile. Please try again." };
+  }
 
   if (!data.session) {
     // Email confirmation is required before a session exists.

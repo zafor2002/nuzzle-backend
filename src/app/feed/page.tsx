@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { visiblePostWhere } from "@/lib/privacy";
+import { getStoryGroups } from "@/lib/stories";
+import { StoryTray } from "@/components/story-tray";
 import { PostCard } from "@/components/post-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Shell } from "@/components/shell";
@@ -20,8 +23,16 @@ export default async function FeedPage() {
     ownerIdFilter = [user.id, ...following.map((f) => f.followingId)];
   }
 
+  // Signed in, the follow filter already implies visibility; signed out it does
+  // not, so private owners' posts are excluded at the query level either way.
+  const storyGroups = user ? await getStoryGroups(user.id) : [];
+
+  const visibility = await visiblePostWhere(user?.id);
+
   const posts = await prisma.post.findMany({
-    where: ownerIdFilter ? { ownerId: { in: ownerIdFilter } } : undefined,
+    where: ownerIdFilter
+      ? { AND: [{ ownerId: { in: ownerIdFilter } }, visibility] }
+      : visibility,
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
@@ -38,6 +49,7 @@ export default async function FeedPage() {
   return (
     <Shell>
       <div className="flex flex-col gap-4">
+        {user && storyGroups.length > 0 && <StoryTray groups={storyGroups} />}
         {isEmptyFollowingFeed && (
           <EmptyState icon="pawprint" title="Your feed is quiet">
             No posts yet from people you follow.{" "}

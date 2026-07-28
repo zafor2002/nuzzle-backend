@@ -14,12 +14,14 @@ export function EditOwnerForm({
   bio,
   avatarUrl,
   isAnonymous,
+  isPrivate,
 }: {
   ownerId: string;
   displayName: string;
   bio: string;
   avatarUrl: string | null;
   isAnonymous: boolean;
+  isPrivate: boolean;
 }) {
   const [state, formAction, pending] = useActionState(async (_prev: typeof initialState, formData: FormData) => {
     const result = await updateOwnerProfile(formData);
@@ -50,6 +52,21 @@ export function EditOwnerForm({
           <span className="mt-1 block text-[11.5px] leading-relaxed text-muted">
             Hides your name and photo everywhere. Your pets stay visible unless you hide them
             separately.
+          </span>
+        </span>
+      </label>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border bg-card p-3.5">
+        <input
+          type="checkbox"
+          name="isPrivate"
+          defaultChecked={isPrivate}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
+        />
+        <span className="min-w-0">
+          <span className="block text-sm font-bold text-foreground">Private account</span>
+          <span className="mt-1 block text-[11.5px] leading-relaxed text-muted">
+            Only people who already follow you can see your posts and pets.
           </span>
         </span>
       </label>

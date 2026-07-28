@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { logout } from "@/app/actions/auth";
+import { canViewOwner } from "@/lib/privacy";
 import { FollowButton } from "./follow-button";
 
 export default async function OwnerProfilePage({
@@ -44,6 +45,7 @@ export default async function OwnerProfilePage({
     : false;
 
   const displayName = owner.isAnonymous ? "Anonymous" : owner.displayName;
+  const locked = !(await canViewOwner(owner, user?.id));
 
   return (
     <main className="mx-auto flex w-full min-h-[calc(100vh-65px)] max-w-lg flex-col gap-4 p-6">
@@ -90,6 +92,12 @@ export default async function OwnerProfilePage({
 
       {owner.bio && !owner.isAnonymous && <p className="text-sm leading-relaxed">{owner.bio}</p>}
 
+      {locked ? (
+        <EmptyState icon="user" title="This account is private">
+          Follow {displayName} to see their pets and posts.
+        </EmptyState>
+      ) : (
+      <>
       <Card padded={false} className="flex py-3">
         {[
           { label: "Pets", value: owner.pets.length },
@@ -137,6 +145,8 @@ export default async function OwnerProfilePage({
           </div>
         )}
       </section>
+      </>
+      )}
     </main>
   );
 }
