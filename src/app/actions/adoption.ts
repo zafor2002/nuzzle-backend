@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { mediaUrlSchema } from "@/lib/media";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ const createListingSchema = z.object({
   age: z.string().trim().max(40).optional(),
   gender: z.enum(["male", "female", "unknown"]).optional(),
   description: z.string().trim().min(1).max(2000),
-  mediaUrl: z.string().trim().url().max(2000).optional(),
+  mediaUrl: mediaUrlSchema,
   location: z.string().trim().max(120).optional(),
   contactInfo: z.string().trim().max(200).optional(),
 });

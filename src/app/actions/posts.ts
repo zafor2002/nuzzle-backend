@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { mediaUrlSchema } from "@/lib/media";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +11,7 @@ import { rateLimit } from "@/lib/rate-limit";
 const createPostSchema = z
   .object({
     caption: z.string().trim().max(2000).optional(),
-    mediaUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+    mediaUrl: mediaUrlSchema.or(z.literal("")),
     petId: z.string().trim().max(100).optional(),
   })
   .refine((data) => data.caption || data.mediaUrl, {

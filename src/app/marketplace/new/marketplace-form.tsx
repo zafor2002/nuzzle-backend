@@ -3,12 +3,11 @@
 import { useActionState, useState } from "react";
 import { createMarketplaceListing } from "@/app/actions/marketplace";
 import { createClient } from "@/utils/supabase/client";
+import { MEDIA_BUCKET, validateImageFile } from "@/lib/media";
 import { Input, Textarea, Select, Field } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const initialState = { error: "" };
-const BUCKET = "post-media";
-
 const CATEGORIES = ["food", "toys", "beds", "health", "accessories", "other"];
 
 export function MarketplaceForm({ ownerId }: { ownerId: string }) {
@@ -25,12 +24,19 @@ export function MarketplaceForm({ ownerId }: { ownerId: string }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const invalid = validateImageFile(file);
+    if (invalid) {
+      setUploadError(invalid);
+      e.target.value = "";
+      return;
+    }
+
     setUploading(true);
     setUploadError("");
 
     const supabase = createClient();
     const path = `marketplace/${ownerId}/${crypto.randomUUID()}-${file.name}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file);
+    const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file);
 
     if (error) {
       setUploadError(error.message);
@@ -38,7 +44,7 @@ export function MarketplaceForm({ ownerId }: { ownerId: string }) {
       return;
     }
 
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path);
     setMediaUrl(data.publicUrl);
     setUploading(false);
   }

@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { MEDIA_BUCKET, validateImageFile } from "@/lib/media";
 import { Avatar } from "@/components/ui/avatar";
-
-const BUCKET = "post-media";
 
 export function AvatarUpload({
   ownerId,
@@ -25,12 +24,19 @@ export function AvatarUpload({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const invalid = validateImageFile(file);
+    if (invalid) {
+      setError(invalid);
+      e.target.value = "";
+      return;
+    }
+
     setUploading(true);
     setError("");
 
     const supabase = createClient();
     const path = `avatars/${ownerId}/${crypto.randomUUID()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file);
+    const { error: uploadError } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file);
 
     if (uploadError) {
       setError(uploadError.message);
@@ -38,7 +44,7 @@ export function AvatarUpload({
       return;
     }
 
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path);
     setUrl(data.publicUrl);
     setUploading(false);
   }

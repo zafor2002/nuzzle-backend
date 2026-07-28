@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { mediaUrlSchema } from "@/lib/media";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +11,7 @@ import { rateLimit } from "@/lib/rate-limit";
 const updateOwnerSchema = z.object({
   displayName: z.string().trim().min(1).max(100),
   bio: z.string().trim().max(500).optional(),
-  avatarUrl: z.string().trim().url().max(2000).optional(),
+  avatarUrl: mediaUrlSchema,
   isAnonymous: z.boolean(),
 });
 
@@ -52,7 +53,7 @@ const updatePetSchema = z.object({
   species: z.string().trim().min(1).max(60),
   breed: z.string().trim().max(60).optional(),
   bio: z.string().trim().max(500).optional(),
-  avatarUrl: z.string().trim().url().max(2000).optional(),
+  avatarUrl: mediaUrlSchema,
   isAnonymous: z.boolean(),
 });
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { mediaUrlSchema } from "@/lib/media";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ const createListingSchema = z.object({
   category: z.enum(CATEGORIES),
   price: z.coerce.number().min(0).max(100000),
   description: z.string().trim().min(1).max(2000),
-  mediaUrl: z.string().trim().url().max(2000).optional(),
+  mediaUrl: mediaUrlSchema,
   location: z.string().trim().max(120).optional(),
 });
 

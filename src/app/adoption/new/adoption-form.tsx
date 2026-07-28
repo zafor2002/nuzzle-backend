@@ -3,12 +3,11 @@
 import { useActionState, useState } from "react";
 import { createAdoptionListing } from "@/app/actions/adoption";
 import { createClient } from "@/utils/supabase/client";
+import { MEDIA_BUCKET, validateImageFile } from "@/lib/media";
 import { Input, Textarea, Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const initialState = { error: "" };
-const BUCKET = "post-media";
-
 export function AdoptionForm({ ownerId }: { ownerId: string }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -23,12 +22,19 @@ export function AdoptionForm({ ownerId }: { ownerId: string }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const invalid = validateImageFile(file);
+    if (invalid) {
+      setUploadError(invalid);
+      e.target.value = "";
+      return;
+    }
+
     setUploading(true);
     setUploadError("");
 
     const supabase = createClient();
     const path = `adoption/${ownerId}/${crypto.randomUUID()}-${file.name}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file);
+    const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file);
 
     if (error) {
       setUploadError(error.message);
@@ -36,7 +42,7 @@ export function AdoptionForm({ ownerId }: { ownerId: string }) {
       return;
     }
 
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path);
     setMediaUrl(data.publicUrl);
     setUploading(false);
   }
