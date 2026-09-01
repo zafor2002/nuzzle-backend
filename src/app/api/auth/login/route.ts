@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase-auth';
 import { apiSuccess, apiError, handleOptions } from '@/lib/api-response';
 
 export async function OPTIONS() {
@@ -22,9 +23,72 @@ export async function POST(req: NextRequest) {
       return apiError(parsed.error.issues[0].message, 400);
     }
 
-    const { email, role } = parsed.data;
+    const { email, password, role } = parsed.data;
 
-    // Support quick demo logins by role
+    // 1. Real Credentials Login (Email + Password) via Supabase Auth
+    if (email && password) {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        return apiError(authError.message, 401);
+      }
+
+      const user = authData.user;
+      if (!user) {
+        return apiError('Authentication failed. No user found.', 401);
+      }
+
+      // Fetch or sync Owner profile from PostgreSQL
+      let owner = await prisma.owner.findFirst({
+        where: {
+          OR: [
+            { id: user.id },
+            { email: user.email! },
+          ],
+        },
+        include: { pets: true },
+      });
+
+      if (!owner) {
+        // Upsert if not in DB yet
+        const userMeta = user.user_metadata || {};
+        owner = await prisma.owner.create({
+          data: {
+            id: user.id,
+            email: user.email!,
+            username: userMeta.username || user.email!.split('@')[0],
+            displayName: userMeta.displayName || userMeta.username || 'Pet Parent',
+            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+            bio: '🐾 Nuzzle Member | Dhaka, Bangladesh',
+          },
+          include: { pets: true },
+        });
+      }
+
+      const inferredRole = (user.user_metadata?.role as 'parent' | 'store' | 'vet') || 'parent';
+
+      return apiSuccess({
+        user: {
+          id: user.id,
+          email: user.email,
+          username: owner.username,
+          displayName: owner.displayName,
+          avatarUrl: owner.avatarUrl,
+          bio: owner.bio,
+          role: inferredRole,
+        },
+        owner,
+        role: inferredRole,
+        token: authData.session?.access_token || `jwt_${user.id}_${Date.now()}`,
+        refreshToken: authData.session?.refresh_token,
+        session: authData.session,
+      }, 200, 'Signed in successfully via Supabase Auth.');
+    }
+
+    // 2. Quick Demo Role Switcher (For rapid testing)
     if (role) {
       const demoAccounts: Record<string, any> = {
         parent: {
@@ -66,24 +130,7 @@ export async function POST(req: NextRequest) {
       }, 200, 'Logged in successfully via quick role switch.');
     }
 
-    if (!email) {
-      return apiError('Email is required for authentication.', 400);
-    }
-
-    const owner = await prisma.owner.findUnique({
-      where: { email },
-      include: { pets: true },
-    });
-
-    if (!owner) {
-      return apiError('Invalid email or password.', 401);
-    }
-
-    return apiSuccess({
-      owner,
-      role: 'parent',
-      token: `nuzzle_token_${owner.id}_${Date.now()}`,
-    }, 200, 'Authentication successful.');
+    return apiError('Please provide an email and password to sign in.', 400);
   } catch (error: any) {
     console.error('API /api/auth/login error:', error);
     return apiError(error.message || 'Authentication error', 500);

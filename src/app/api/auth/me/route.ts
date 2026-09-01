@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase-auth';
 import { apiSuccess, apiError, handleOptions } from '@/lib/api-response';
 
 export async function OPTIONS() {
@@ -9,21 +10,47 @@ export async function OPTIONS() {
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization') || '';
-    const token = authHeader.replace(/^Bearer\s+/i, '');
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
-    // If token exists, try to locate owner or return default profile
-    let owner = await prisma.owner.findFirst({
-      include: {
-        pets: {
-          include: {
-            healthLogs: true,
+    let authenticatedUserId: string | null = null;
+
+    if (token) {
+      // Validate Bearer token via Supabase Auth
+      const { data, error } = await supabase.auth.getUser(token);
+      if (!error && data.user) {
+        authenticatedUserId = data.user.id;
+      }
+    }
+
+    let owner = null;
+
+    if (authenticatedUserId) {
+      owner = await prisma.owner.findUnique({
+        where: { id: authenticatedUserId },
+        include: {
+          pets: {
+            include: {
+              healthLogs: true,
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     if (!owner) {
-      // Return default starter profile
+      owner = await prisma.owner.findFirst({
+        include: {
+          pets: {
+            include: {
+              healthLogs: true,
+            },
+          },
+        },
+      });
+    }
+
+    if (!owner) {
+      // Starter Profile Fallback
       return apiSuccess({
         id: 'owner_me',
         username: 'pawprints_alex',
