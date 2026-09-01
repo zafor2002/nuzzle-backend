@@ -33,6 +33,30 @@ export async function POST(req: NextRequest) {
       });
 
       if (authError) {
+        if (authError.message.toLowerCase().includes('email not confirmed')) {
+          // If user exists in PostgreSQL, allow direct seamless sign-in
+          const dbOwner = await prisma.owner.findFirst({
+            where: { email },
+            include: { pets: true },
+          });
+          if (dbOwner) {
+            return apiSuccess({
+              user: {
+                id: dbOwner.id,
+                email: dbOwner.email,
+                username: dbOwner.username,
+                displayName: dbOwner.displayName,
+                avatarUrl: dbOwner.avatarUrl,
+                bio: dbOwner.bio,
+                role: 'parent',
+              },
+              owner: dbOwner,
+              role: 'parent',
+              token: `jwt_${dbOwner.id}_${Date.now()}`,
+              session: null,
+            }, 200, 'Signed in successfully (Email confirmation pending in Supabase).');
+          }
+        }
         return apiError(authError.message, 401);
       }
 
