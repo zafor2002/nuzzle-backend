@@ -57,9 +57,6 @@ export async function GET(req: NextRequest) {
             displayName,
             avatarUrl,
             bio: '🐾 Pet lover on Nuzzle • Welcome to Dhaka\'s Pet Community!',
-            followersCount: 0,
-            followingCount: 0,
-            role: 'parent',
           },
           update: {},
           include: {
