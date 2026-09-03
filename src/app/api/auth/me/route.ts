@@ -37,7 +37,43 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    if (!owner) {
+    if (authenticatedUserId && !owner) {
+      // Auto-provision fresh Owner for OAuth/Google users
+      const { data } = await supabase.auth.getUser(token);
+      const user = data?.user;
+      if (user) {
+        const meta = user.user_metadata || {};
+        const email = user.email || `user_${user.id.slice(0, 8)}@nuzzle.ai`;
+        const displayName = meta.full_name || meta.name || email.split('@')[0];
+        const username = (email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') || 'user') + '_' + user.id.slice(0, 4);
+        const avatarUrl = meta.avatar_url || meta.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';
+
+        owner = await prisma.owner.upsert({
+          where: { id: authenticatedUserId },
+          create: {
+            id: authenticatedUserId,
+            email,
+            username,
+            displayName,
+            avatarUrl,
+            bio: '🐾 Pet lover on Nuzzle • Welcome to Dhaka\'s Pet Community!',
+            followersCount: 0,
+            followingCount: 0,
+            role: 'parent',
+          },
+          update: {},
+          include: {
+            pets: {
+              include: {
+                healthLogs: true,
+              },
+            },
+          },
+        });
+      }
+    }
+
+    if (!owner && !authenticatedUserId) {
       owner = await prisma.owner.findFirst({
         include: {
           pets: {
@@ -50,42 +86,17 @@ export async function GET(req: NextRequest) {
     }
 
     if (!owner) {
-      // Starter Profile Fallback
+      // Clean Fresh Profile Fallback
       return apiSuccess({
-        id: 'owner_me',
-        username: 'pawprints_alex',
-        displayName: 'Alex Rivers',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        bio: '🐾 Golden retriever dad & Siamese cat servant | Nature hiker | Pet nutrition enthusiast 🥑',
+        id: authenticatedUserId || 'owner_me',
+        username: 'new_member',
+        displayName: 'New Member',
+        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
+        bio: '🐾 Pet lover on Nuzzle • Welcome to Dhaka\'s Pet Community!',
         isAnonymous: false,
-        followersCount: 1420,
-        followingCount: 388,
-        pets: [
-          {
-            id: 'pet_1',
-            name: 'Waffles',
-            species: 'Dog',
-            breed: 'Golden Retriever',
-            avatarUrl: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=200&auto=format&fit=crop&q=80',
-            age: '2 yrs 4 mos',
-            weight: '29.5 kg',
-            microchipId: '985-1410-0921-334',
-            aiPersonality: 'Silly Goofball & Master Fetcher',
-            energyLevel: 'High Zoomies',
-          },
-          {
-            id: 'pet_2',
-            name: 'Mochi',
-            species: 'Cat',
-            breed: 'Siamese mix',
-            avatarUrl: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=200&auto=format&fit=crop&q=80',
-            age: '1 yr 8 mos',
-            weight: '4.2 kg',
-            microchipId: '985-1410-0921-889',
-            aiPersonality: 'Sunbeam Connoisseur & Silent Judge',
-            energyLevel: 'Midnight Sprint',
-          },
-        ],
+        followersCount: 0,
+        followingCount: 0,
+        pets: [],
       });
     }
 
