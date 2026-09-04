@@ -65,12 +65,14 @@ const createAdoptionSchema = z.object({
   name: z.string().min(1),
   species: z.string().min(1),
   breed: z.string().optional(),
-  age: z.string().min(1),
-  gender: z.string().min(1),
-  organizationName: z.string().min(1),
-  location: z.string().min(1),
-  description: z.string().min(1),
-  mediaUrls: z.array(z.string()).min(1),
+  age: z.string().optional().default('Young'),
+  gender: z.string().optional().default('Boy'),
+  organizationName: z.string().optional(),
+  shelterName: z.string().optional(),
+  location: z.string().optional().default('Dhaka, Bangladesh'),
+  description: z.string().optional().default('Loving rescue pet seeking a permanent warm home.'),
+  mediaUrls: z.array(z.string()).optional(),
+  imageUrl: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -83,9 +85,24 @@ export async function POST(req: NextRequest) {
     }
 
     const data = parsed.data;
+    const resolvedOrg = data.shelterName || data.organizationName || 'Dhaka Animal Welfare Shelter';
+    const resolvedMedia = data.mediaUrls && data.mediaUrls.length > 0 
+      ? data.mediaUrls 
+      : [data.imageUrl || 'https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=800&auto=format&fit=crop&q=80'];
+
     const newAdoption = {
       id: `adopt_${Date.now()}`,
-      ...data,
+      name: data.name,
+      species: data.species,
+      breed: data.breed || 'Companion',
+      age: data.age,
+      gender: data.gender,
+      organizationName: resolvedOrg,
+      shelterName: resolvedOrg,
+      location: data.location,
+      description: data.description,
+      mediaUrls: resolvedMedia,
+      imageUrl: resolvedMedia[0],
       vaccinated: true,
       neutered: false,
       microchipped: true,

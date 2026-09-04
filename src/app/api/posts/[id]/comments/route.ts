@@ -6,6 +6,41 @@ export async function OPTIONS() {
   return handleOptions();
 }
 
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    
+    // Sample comments for post
+    const sampleComments = [
+      {
+        id: 'c1',
+        postId: id,
+        authorName: 'Sarah & Milo',
+        authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+        body: 'Branch manager of the year award goes to Waffles! 🏆',
+        createdAt: '1h ago',
+        likesCount: 14,
+        isLiked: true,
+      },
+      {
+        id: 'c2',
+        postId: id,
+        authorName: 'Alex Rivers',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        body: 'Thank you everyone! He has not dropped the stick for 2 hours now 😄',
+        createdAt: '35m ago',
+        likesCount: 6,
+        isLiked: false,
+      }
+    ];
+
+    return apiSuccess(sampleComments);
+  } catch (error: any) {
+    console.error('API /api/posts/[id]/comments GET error:', error);
+    return apiError(error.message || 'Failed to fetch comments', 500);
+  }
+}
+
 const commentSchema = z.object({
   body: z.string().trim().min(1).max(500),
   authorName: z.string().default('Alex Rivers'),

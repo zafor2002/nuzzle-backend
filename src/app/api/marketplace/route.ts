@@ -83,10 +83,11 @@ const createListingSchema = z.object({
   title: z.string().min(1),
   category: z.string().min(1),
   price: z.number().min(0),
-  description: z.string().min(1),
-  mediaUrls: z.array(z.string()).min(1),
-  location: z.string().optional(),
-  sellerType: z.enum(['verified_shop', 'individual']).default('individual'),
+  description: z.string().optional().default(''),
+  mediaUrls: z.array(z.string()).optional(),
+  imageUrl: z.string().optional(),
+  location: z.string().optional().default('Dhaka'),
+  sellerType: z.enum(['verified_shop', 'individual', 'store', 'parent']).default('individual'),
 });
 
 export async function POST(req: NextRequest) {
@@ -99,9 +100,20 @@ export async function POST(req: NextRequest) {
     }
 
     const data = parsed.data;
+    const resolvedMedia = data.mediaUrls && data.mediaUrls.length > 0 
+      ? data.mediaUrls 
+      : [data.imageUrl || 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800&auto=format&fit=crop&q=80'];
+
     const newListing = {
       id: `mkt_${Date.now()}`,
-      ...data,
+      title: data.title,
+      category: data.category,
+      price: data.price,
+      description: data.description,
+      mediaUrls: resolvedMedia,
+      imageUrl: resolvedMedia[0],
+      location: data.location,
+      sellerType: data.sellerType,
       currency: 'BDT',
       sellerId: 'owner_me',
       sellerName: 'Alex Rivers',

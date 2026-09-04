@@ -78,14 +78,18 @@ export async function GET(req: NextRequest) {
 }
 
 const createReportSchema = z.object({
-  type: z.enum(['lost', 'found', 'emergency_rescue']),
+  type: z.enum(['lost', 'found', 'emergency_rescue']).optional(),
+  status: z.enum(['lost', 'found', 'emergency_rescue']).optional(),
   petName: z.string().min(1),
   species: z.string().min(1),
   breed: z.string().optional(),
-  lastSeenLocation: z.string().min(1),
-  description: z.string().min(1),
-  mediaUrls: z.array(z.string()).default([]),
-  contactPhone: z.string().min(1),
+  location: z.string().optional(),
+  lastSeenLocation: z.string().optional(),
+  description: z.string().optional().default('Emergency pet alert reported on Nuzzle Community Radar.'),
+  mediaUrls: z.array(z.string()).optional(),
+  imageUrl: z.string().optional(),
+  contactName: z.string().optional(),
+  contactPhone: z.string().optional(),
   reward: z.string().optional(),
 });
 
@@ -99,10 +103,29 @@ export async function POST(req: NextRequest) {
     }
 
     const data = parsed.data;
+    const resolvedType = data.type || data.status || 'lost';
+    const resolvedLocation = data.lastSeenLocation || data.location || 'Dhaka, Bangladesh';
+    const resolvedMedia = data.mediaUrls && data.mediaUrls.length > 0 
+      ? data.mediaUrls 
+      : [data.imageUrl || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&auto=format&fit=crop&q=80'];
+
     const newReport = {
       id: `lf_${Date.now()}`,
-      ...data,
+      type: resolvedType,
+      status: resolvedType,
+      petName: data.petName,
+      species: data.species,
+      breed: data.breed || 'Companion',
+      lastSeenLocation: resolvedLocation,
+      location: resolvedLocation,
+      description: data.description,
+      mediaUrls: resolvedMedia,
+      imageUrl: resolvedMedia[0],
+      contactName: data.contactName || 'Community Member',
+      contactPhone: data.contactPhone || '+880 1700-000000',
+      reward: data.reward,
       lastSeenDate: 'Just now',
+      reportedDate: 'Just now',
       isResolved: false,
       distanceMiles: 0.1,
       matchScore: 98,
