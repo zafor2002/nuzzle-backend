@@ -59,11 +59,12 @@ function getProviderCascade(): ILLMProvider[] {
 export function getLLMStatus() {
   const cascade = getProviderCascade();
   const maira = new MairaProvider();
+  const openai = new OpenAIProvider();
   return {
     preferred: process.env.LLM_PROVIDER || 'maira',
     hasMairaKey: maira.isAvailable(),
     hasGeminiKey: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 5),
-    hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.length > 5),
+    hasOpenAiKey: openai.isAvailable(),
     activeCascade: cascade.map(p => p.name),
     fallbackEngine: fallbackProvider.name,
   };

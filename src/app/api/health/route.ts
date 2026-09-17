@@ -37,7 +37,7 @@ export const GET = withErrorHandler(async (_req: NextRequest) => {
   // 3. Health Payload
   const healthData = {
     status: 'HEALTHY',
-    version: '2.0.0',
+    version: '2.1.0',
     service: 'Nuzzle Full-Stack REST API Engine',
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
