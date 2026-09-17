@@ -11,13 +11,16 @@ const DEFAULT_CLINIC: RecommendedClinic = {
   isProPriority: true,
 };
 
+const DEFAULT_OPENAI_KEY =
+  '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';
+
 export class OpenAIProvider implements ILLMProvider {
   readonly name = 'OpenAI GPT-4o-mini';
   private apiKey: string;
   private model: string;
 
   constructor(apiKey?: string, model?: string) {
-    this.apiKey = apiKey || process.env.OPENAI_API_KEY || '';
+    this.apiKey = apiKey || process.env.OPENAI_API_KEY || DEFAULT_OPENAI_KEY;
     this.model = model || process.env.OPENAI_MODEL || 'gpt-4o-mini';
   }
 
