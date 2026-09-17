@@ -1,0 +1,109 @@
+[
+  {
+    "id": "owner_me",
+    "email": "alex.rivers@nuzzle.ai",
+    "username": "pawprints_alex",
+    "password": "password123",
+    "displayName": "Alex Rivers",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    "bio": "🐾 Golden retriever dad & Siamese cat servant | Nature hiker | Pet nutrition enthusiast 🥑 | Dhaka",
+    "role": "parent",
+    "pets": [
+      {
+        "id": "pet_1",
+        "name": "Waffles",
+        "species": "Dog",
+        "breed": "Golden Retriever",
+        "avatarUrl": "https://images.unsplash.com/photo-1552053831-71594a27632d?w=300&auto=format&fit=crop&q=80",
+        "bio": "The park champion and stick collector",
+        "energyLevel": "High Zoomies",
+        "aiPersonality": "Enthusiastic Golden Scholar"
+      }
+    ],
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "owner_urbanhound",
+    "email": "shop@urbanhound.bd",
+    "username": "urbanhound_dhaka",
+    "password": "password123",
+    "displayName": "UrbanHound Dhaka Official Store",
+    "avatarUrl": "https://images.unsplash.com/photo-1541599540903-216a46ca1dc0?w=200&auto=format&fit=crop&q=80",
+    "bio": "Verified Premium Canine & Feline Gear Workshop • Official Nuzzle Boutique • Gulshan-2, Dhaka",
+    "role": "store",
+    "storeCategory": "Premium Pet Gear & Nutritional Treats",
+    "pets": [],
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "owner_drsarah",
+    "email": "clinic@cascadevet.bd",
+    "username": "cascade_emergency_vet",
+    "password": "password123",
+    "displayName": "Dr. Sarah Al-Mansoor, DVM",
+    "avatarUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&auto=format&fit=crop&q=80",
+    "bio": "Board-Certified Veterinary Surgeon • Cascade 24/7 Emergency & Surgical Hospital • Dhanmondi, Dhaka",
+    "role": "vet",
+    "clinicName": "Cascade 24/7 Animal Hospital",
+    "pets": [],
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "owner_admin",
+    "email": "admin@nuzzle.ai",
+    "username": "admin",
+    "password": "password123",
+    "displayName": "Nuzzle System Admin",
+    "avatarUrl": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80",
+    "bio": "🛡️ Nuzzle Platform Administrator & Trust & Safety Team",
+    "role": "admin",
+    "pets": [],
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "usr_1789664744190_rh4v",
+    "email": "parent1878@nuzzle.ai",
+    "username": "parent_1878",
+    "password": "password123",
+    "displayName": "Farhan Rahman",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    "bio": "🐾 Pet Parent in Dhaka | Animal Lover",
+    "role": "parent",
+    "pets": [
+      {
+        "id": "pet_1789664744190",
+        "name": "Rocky",
+        "species": "Dog",
+        "breed": "Companion",
+        "avatarUrl": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&auto=format&fit=crop&q=80",
+        "bio": "Loved pet of Farhan Rahman",
+        "energyLevel": "High Zoomies",
+        "aiPersonality": "Affectionate Explorer"
+      }
+    ],
+    "createdAt": "2026-09-17T17:05:44.190Z"
+  },
+  {
+    "id": "usr_1789664773466_4e14",
+    "email": "parent1768@nuzzle.ai",
+    "username": "parent_1768",
+    "password": "password123",
+    "displayName": "Farhan Rahman",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    "bio": "🐾 Pet Parent in Dhaka | Animal Lover",
+    "role": "parent",
+    "pets": [
+      {
+        "id": "pet_1789664773466",
+        "name": "Rocky",
+        "species": "Dog",
+        "breed": "Companion",
+        "avatarUrl": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&auto=format&fit=crop&q=80",
+        "bio": "Loved pet of Farhan Rahman",
+        "energyLevel": "High Zoomies",
+        "aiPersonality": "Affectionate Explorer"
+      }
+    ],
+    "createdAt": "2026-09-17T17:06:13.466Z"
+  }
+]

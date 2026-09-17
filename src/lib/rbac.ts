@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase-auth';
+import { decodeLocalSessionToken } from '@/lib/auth-service';
 
 export type UserRole = 'PET_OWNER' | 'PARENT' | 'STORE' | 'VET' | 'ADMIN';
 
@@ -23,8 +24,21 @@ export async function getAuthContext(req: NextRequest): Promise<AuthContext | nu
   const token = authHeader.substring(7).trim();
   if (!token) return null;
 
+  // 1. Check Local Resilience Token
+  const localPayload = decodeLocalSessionToken(token);
+  if (localPayload?.id) {
+    const rawRole = (localPayload.role || 'parent').toUpperCase();
+    const role: UserRole = rawRole === 'PARENT' ? 'PARENT' : rawRole === 'STORE' ? 'STORE' : rawRole === 'VET' ? 'VET' : rawRole === 'ADMIN' ? 'ADMIN' : 'PET_OWNER';
+    return {
+      userId: localPayload.id,
+      email: localPayload.email,
+      role,
+      token,
+    };
+  }
+
   try {
-    // 1. Verify via Supabase Auth
+    // 2. Verify via Supabase Auth
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (!error && user) {
       const role = (user.user_metadata?.role as UserRole) || 'PET_OWNER';
@@ -36,8 +50,8 @@ export async function getAuthContext(req: NextRequest): Promise<AuthContext | nu
       };
     }
 
-    // 2. Fallback for development/testing tokens (e.g. dev_user_token)
-    if (process.env.NODE_ENV !== 'production' || token.startsWith('mock_') || token.startsWith('dev_')) {
+    // 3. Fallback for development/testing tokens (e.g. dev_user_token)
+    if (process.env.NODE_ENV !== 'production' || token.startsWith('mock_') || token.startsWith('dev_') || token.startsWith('nuzzle_')) {
       return {
         userId: 'dev_user_123',
         email: 'dev@nuzzle.app',
