@@ -16,80 +16,94 @@ export * from './fallback-provider';
 let cachedProvider: ILLMProvider | null = null;
 const fallbackProvider = new FallbackProvider();
 
+/**
+ * Build the ordered list of ALL available live LLM providers.
+ * The preferred provider goes first, followed by any others that have valid API keys.
+ */
+function buildProviderCascade(): ILLMProvider[] {
+  const providers: ILLMProvider[] = [];
+  const preferred = (process.env.LLM_PROVIDER || 'openai').toLowerCase();
+
+  // Create all candidate providers
+  const maira = process.env.MAIRA_API_KEY ? new MairaProvider() : null;
+  const openai = process.env.OPENAI_API_KEY ? new OpenAIProvider() : null;
+  const gemini = process.env.GEMINI_API_KEY ? new GeminiProvider() : null;
+
+  // Add the preferred provider first
+  if (preferred === 'maira' && maira) providers.push(maira);
+  else if (preferred === 'openai' && openai) providers.push(openai);
+  else if (preferred === 'gemini' && gemini) providers.push(gemini);
+
+  // Add all remaining providers that aren't already in the list
+  if (openai && !providers.some(p => p instanceof OpenAIProvider)) providers.push(openai);
+  if (gemini && !providers.some(p => p instanceof GeminiProvider)) providers.push(gemini);
+  if (maira && !providers.some(p => p instanceof MairaProvider)) providers.push(maira);
+
+  return providers;
+}
+
+let providerCascade: ILLMProvider[] | null = null;
+
+function getProviderCascade(): ILLMProvider[] {
+  if (!providerCascade) {
+    providerCascade = buildProviderCascade();
+    if (providerCascade.length > 0) {
+      logger.info(`LLM Factory: Cascade initialized → [${providerCascade.map(p => p.name).join(' → ')} → Static Fallback]`);
+    } else {
+      logger.warn('LLM Factory: No live LLM API keys detected. Using Nuzzle Clinical Heuristic Engine only.');
+    }
+  }
+  return providerCascade;
+}
+
 export function getLLMProvider(): ILLMProvider {
   if (cachedProvider) {
     return cachedProvider;
   }
-
-  const preferred = (process.env.LLM_PROVIDER || 'openai').toLowerCase();
-
-  if (preferred === 'maira' && process.env.MAIRA_API_KEY) {
-    logger.info('LLM Factory: Initialized Gigalogy MAIRA Managed RAG provider');
-    cachedProvider = new MairaProvider();
-    return cachedProvider;
-  }
-
-  if (preferred === 'openai' && process.env.OPENAI_API_KEY) {
-    logger.info('LLM Factory: Initialized OpenAI provider');
-    cachedProvider = new OpenAIProvider();
-    return cachedProvider;
-  }
-
-  if (preferred === 'gemini' && process.env.GEMINI_API_KEY) {
-    logger.info('LLM Factory: Initialized Google Gemini provider');
-    cachedProvider = new GeminiProvider();
-    return cachedProvider;
-  }
-
-  // Auto-detect any configured key
-  if (process.env.MAIRA_API_KEY) {
-    logger.info('LLM Factory: Auto-detected MAIRA_API_KEY, using Gigalogy MAIRA RAG');
-    cachedProvider = new MairaProvider();
-    return cachedProvider;
-  }
-
-  if (process.env.OPENAI_API_KEY) {
-    logger.info('LLM Factory: Auto-detected OPENAI_API_KEY, using OpenAI');
-    cachedProvider = new OpenAIProvider();
-    return cachedProvider;
-  }
-
-  if (process.env.GEMINI_API_KEY) {
-    logger.info('LLM Factory: Auto-detected GEMINI_API_KEY, using Google Gemini');
-    cachedProvider = new GeminiProvider();
-    return cachedProvider;
-  }
-
-  logger.warn('LLM Factory: No live LLM API key detected. Using Nuzzle Clinical Heuristic Engine (zero-downtime offline fallback).');
-  cachedProvider = fallbackProvider;
+  const cascade = getProviderCascade();
+  cachedProvider = cascade[0] || fallbackProvider;
   return cachedProvider;
 }
 
 
 /**
- * Resilient triage execution with automatic failover to the clinical heuristic engine.
+ * Resilient triage execution with multi-tier cascade failover.
+ * Tries: Primary LLM → Secondary LLM → … → Static Heuristic Engine
  */
 export async function executeTriageWithFailover(req: TriageRequest): Promise<TriageResult> {
-  const provider = getLLMProvider();
+  const cascade = getProviderCascade();
 
-  try {
-    return await provider.triage(req);
-  } catch (error: any) {
-    logger.warn(`LLM provider [${provider.name}] failed during triage. Executing zero-downtime fallback. Error: ${error?.message || error}`);
-    return await fallbackProvider.triage(req);
+  for (const provider of cascade) {
+    try {
+      const result = await provider.triage(req);
+      return result;
+    } catch (error: any) {
+      logger.warn(`LLM provider [${provider.name}] failed during triage. Trying next provider… Error: ${error?.message || error}`);
+    }
   }
+
+  // All live providers exhausted — use static heuristic engine
+  logger.warn('All LLM providers failed during triage. Using static Clinical Heuristic Engine.');
+  return await fallbackProvider.triage(req);
 }
 
 /**
- * Resilient chat execution with automatic failover.
+ * Resilient chat execution with multi-tier cascade failover.
+ * Tries: Primary LLM → Secondary LLM → … → Static Heuristic Engine
  */
 export async function executeChatWithFailover(req: ChatRequest): Promise<ChatResponse> {
-  const provider = getLLMProvider();
+  const cascade = getProviderCascade();
 
-  try {
-    return await provider.chat(req);
-  } catch (error: any) {
-    logger.warn(`LLM provider [${provider.name}] failed during chat. Executing zero-downtime fallback. Error: ${error?.message || error}`);
-    return await fallbackProvider.chat(req);
+  for (const provider of cascade) {
+    try {
+      const result = await provider.chat(req);
+      return result;
+    } catch (error: any) {
+      logger.warn(`LLM provider [${provider.name}] failed during chat. Trying next provider… Error: ${error?.message || error}`);
+    }
   }
+
+  // All live providers exhausted — use static heuristic engine
+  logger.warn('All LLM providers failed during chat. Using static Clinical Heuristic Engine.');
+  return await fallbackProvider.chat(req);
 }
