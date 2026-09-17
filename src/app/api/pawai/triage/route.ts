@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { apiSuccess, apiError, handleOptions, withErrorHandler } from '@/lib/api-response';
 import { executeTriageWithFailover } from '@/lib/llm';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+export const runtime = 'nodejs';
+
 export async function OPTIONS() {
   return handleOptions();
 }

@@ -59,6 +59,7 @@ export class GeminiProvider implements ILLMProvider {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(4000),
     });
 
     if (!response.ok) {
@@ -130,6 +131,7 @@ export class GeminiProvider implements ILLMProvider {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(4000),
     });
 
     if (!response.ok) {

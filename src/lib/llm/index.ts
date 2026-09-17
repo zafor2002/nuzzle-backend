@@ -48,12 +48,24 @@ function getProviderCascade(): ILLMProvider[] {
   if (!providerCascade) {
     providerCascade = buildProviderCascade();
     if (providerCascade.length > 0) {
-      logger.info(`LLM Factory: Cascade initialized → [${providerCascade.map(p => p.name).join(' → ')} → Static Fallback]`);
+      logger.info(`LLM Factory: Cascade initialized → [${providerCascade.map(p => p.name).join(' → ')} → Dynamic Heuristic Fallback]`);
     } else {
-      logger.warn('LLM Factory: No live LLM API keys detected. Using Nuzzle Clinical Heuristic Engine only.');
+      logger.warn('LLM Factory: No live LLM API keys detected. Using Nuzzle Clinical Heuristic Engine (Dynamic).');
     }
   }
   return providerCascade;
+}
+
+export function getLLMStatus() {
+  const cascade = getProviderCascade();
+  return {
+    preferred: process.env.LLM_PROVIDER || 'auto',
+    hasMairaKey: Boolean(process.env.MAIRA_API_KEY && process.env.MAIRA_API_KEY.length > 5),
+    hasGeminiKey: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 5),
+    hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.length > 5),
+    activeCascade: cascade.map(p => p.name),
+    fallbackEngine: fallbackProvider.name,
+  };
 }
 
 export function getLLMProvider(): ILLMProvider {

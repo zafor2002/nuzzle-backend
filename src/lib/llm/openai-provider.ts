@@ -53,6 +53,7 @@ export class OpenAIProvider implements ILLMProvider {
         response_format: { type: 'json_object' },
         temperature: 0.2,
       }),
+      signal: AbortSignal.timeout(4500),
     });
 
     if (!response.ok) {
@@ -114,6 +115,7 @@ export class OpenAIProvider implements ILLMProvider {
         messages,
         temperature: 0.7,
       }),
+      signal: AbortSignal.timeout(4500),
     });
 
     if (!response.ok) {

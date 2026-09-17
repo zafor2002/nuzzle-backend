@@ -2,6 +2,11 @@ import { NextRequest } from 'next/server';
 import { apiSuccess, handleOptions, withErrorHandler } from '@/lib/api-response';
 import { prisma } from '@/lib/prisma';
 import { getRecentLogs } from '@/lib/logger';
+import { getLLMStatus } from '@/lib/llm';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+export const runtime = 'nodejs';
 
 export async function OPTIONS() {
   return handleOptions();
@@ -58,6 +63,7 @@ export const GET = withErrorHandler(async (_req: NextRequest) => {
       dataAccess: { status: 'OPERATIONAL', orm: 'Prisma 7 Client' },
       cloudInfrastructure: { status: 'CONNECTED', host: 'Supabase Cloud' },
       monitoringReliability: { status: 'RECORDING', recentLogCount: getRecentLogs().length },
+      llmEngine: getLLMStatus(),
     },
   };
 

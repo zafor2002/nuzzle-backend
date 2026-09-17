@@ -5,6 +5,10 @@ import { MEDIA_BUCKET, MAX_UPLOAD_BYTES, ALLOWED_IMAGE_TYPES } from '@/lib/media
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+export const runtime = 'nodejs';
+
 export async function OPTIONS() {
   return handleOptions();
 }
