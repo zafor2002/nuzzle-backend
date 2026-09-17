@@ -10,7 +10,7 @@ export async function OPTIONS() {
 }
 
 const aiMatchSchema = z.object({
-  sightingDescription: z.string().min(3, 'Sighting description must be at least 3 characters long'),
+  sightingDescription: z.string().min(2, 'Sighting description must be at least 2 characters long'),
   imageUrl: z.string().url().optional(),
   location: z.string().optional(),
   latitude: z.number().optional(),
@@ -19,11 +19,16 @@ const aiMatchSchema = z.object({
 });
 
 export const POST = withErrorHandler(async (req: NextRequest) => {
-  const body = await req.json();
-  const parsed = aiMatchSchema.safeParse(body);
+  const body = await req.json().catch(() => ({}));
+  const desc = body.sightingDescription || body.description || [body.petType, body.breed, body.color, body.lastSeenLocation, body.location].filter(Boolean).join(' ') || 'Lost pet sighting';
+  const normalized = {
+    ...body,
+    sightingDescription: desc,
+  };
+  const parsed = aiMatchSchema.safeParse(normalized);
 
   if (!parsed.success) {
-    return apiError(parsed.error.issues[0].message, 400, parsed.error.issues);
+    return apiError(parsed.error.issues[0]?.message || 'Invalid match request', 400, parsed.error.issues);
   }
 
   const { sightingDescription, imageUrl, location, latitude, longitude } = parsed.data;

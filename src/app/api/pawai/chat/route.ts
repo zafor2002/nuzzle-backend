@@ -29,14 +29,41 @@ const chatSchema = z.object({
 });
 
 export const POST = withErrorHandler(async (req: NextRequest) => {
-  const body = await req.json();
-  const parsed = chatSchema.safeParse(body);
+  const body = await req.json().catch(() => ({}));
+
+  // Normalize single message / prompt / query / text to messages array
+  let normalizedMessages = body.messages;
+  if (!Array.isArray(normalizedMessages)) {
+    const singleMsg = body.message || body.prompt || body.query || body.text || (typeof body === 'string' ? body : '');
+    if (singleMsg && typeof singleMsg === 'string' && singleMsg.trim()) {
+      normalizedMessages = [{ role: 'user', content: singleMsg.trim() }];
+    }
+  } else {
+    // Ensure each item has role and content
+    normalizedMessages = normalizedMessages.map((m: any) => {
+      if (typeof m === 'string') {
+        return { role: 'user', content: m };
+      }
+      return {
+        role: m.role || 'user',
+        content: m.content || m.text || m.body || '',
+      };
+    }).filter((m: any) => typeof m.content === 'string' && m.content.trim().length > 0);
+  }
+
+  const normalizedPayload = {
+    ...body,
+    messages: normalizedMessages,
+  };
+
+  const parsed = chatSchema.safeParse(normalizedPayload);
 
   if (!parsed.success) {
-    return apiError(parsed.error.issues[0].message, 400, parsed.error.issues);
+    return apiError(parsed.error.issues[0]?.message || 'Invalid chat request', 400, parsed.error.issues);
   }
 
   const response = await executeChatWithFailover(parsed.data);
 
   return apiSuccess(response, 200, 'PawDoctor AI response generated.');
 });
+

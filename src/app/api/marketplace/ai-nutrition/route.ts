@@ -14,16 +14,20 @@ const nutritionQuerySchema = z.object({
   age: z.string().optional(),
   weight: z.string().optional(),
   allergies: z.string().optional(),
-  query: z.string().min(2, 'Query must be at least 2 characters long'),
+  query: z.string().default('Recommend optimal nutrition and diet for this pet'),
   imageUrl: z.string().url().optional(),
 });
 
 export const POST = withErrorHandler(async (req: NextRequest) => {
-  const body = await req.json();
-  const parsed = nutritionQuerySchema.safeParse(body);
+  const body = await req.json().catch(() => ({}));
+  const normalized = {
+    ...body,
+    query: body.query || body.message || body.prompt || body.question || 'Recommend optimal nutrition and diet for this pet',
+  };
+  const parsed = nutritionQuerySchema.safeParse(normalized);
 
   if (!parsed.success) {
-    return apiError(parsed.error.issues[0].message, 400, parsed.error.issues);
+    return apiError(parsed.error.issues[0]?.message || 'Invalid nutrition query', 400, parsed.error.issues);
   }
 
   const { species, breed, age, weight, allergies, query } = parsed.data;
