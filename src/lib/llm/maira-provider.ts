@@ -35,8 +35,8 @@ export class MairaProvider implements ILLMProvider {
     const breed = req.breed || 'Mixed';
     const query = `[Patient: ${petName}, Species: ${species}, Breed: ${breed}, Age: ${req.age || 'N/A'}, Duration: ${req.duration || 'N/A'}] Symptoms: ${req.symptoms}`;
 
-    const datasetId = process.env.MAIRA_VET_DATASET_ID;
-    const profileId = process.env.MAIRA_PROFILE_ID || process.env.MAIRA_VET_PROFILE_ID;
+    const datasetId = process.env.MAIRA_VET_DATASET_ID || '9dfc7c57-c072-441c-b653-1cf98247f990';
+    const profileId = process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '9884416a-abd3-4e9c-a893-b2b0cab2bc60';
 
     logger.info('MairaProvider: Querying MAIRA RAG for triage', { petName, symptoms: req.symptoms });
 
@@ -105,7 +105,7 @@ export class MairaProvider implements ILLMProvider {
       query,
       conversation_type: 'chat',
       session_id: `sess_${petName.toLowerCase()}_${Date.now()}`,
-      gpt_profile_id: process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID,
+      gpt_profile_id: process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '9884416a-abd3-4e9c-a893-b2b0cab2bc60',
       top_k: 15,
       is_keyword_enabled: true,
     });

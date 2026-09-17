@@ -1,6 +1,13 @@
 import { MairaAskRequest, MairaAskResponse, MairaVisionRequest, MairaCreateDocumentItem, MairaCreateDocumentsPayload } from './types';
 import { logger } from '@/lib/logger';
 
+const BUILTIN_MAIRA_CONFIG = {
+  baseUrl: 'https://api.recommender.gigalogy.com/v1',
+  apiKey: 'gAAAAABqrAzb77G-Q_S5XMo58LCsffzZRGIsvFSE00ysSrMNmdqfvbGkUcgC5-XZYB-cGIChrip7a2IHdnddoAyX7Um1GMR6-t27IOxy-FfSXwK8G1L_3v_ZtlNDo32INXata34SLV1R',
+  projectId: '7cRweBIfBKCa37tPnqgKP4MX-8nG2rHKu3vXVdZ_Hh4=',
+  profileId: '0a8fd1e8-45ac-4870-8f5f-cfbc7ccf58a6',
+};
+
 export class MairaClient {
   private baseUrl: string;
   private apiKey: string;
@@ -8,10 +15,10 @@ export class MairaClient {
   private defaultProjectId: string;
 
   constructor(options?: { baseUrl?: string; apiKey?: string; defaultProfileId?: string; defaultProjectId?: string }) {
-    this.baseUrl = options?.baseUrl || process.env.MAIRA_BASE_URL || 'https://api.recommender.gigalogy.com/v1';
-    this.apiKey = options?.apiKey || process.env.MAIRA_API_KEY || '';
-    this.defaultProfileId = options?.defaultProfileId || process.env.MAIRA_PROFILE_ID || '';
-    this.defaultProjectId = options?.defaultProjectId || process.env.MAIRA_PROJECT_ID || '';
+    this.baseUrl = options?.baseUrl || process.env.MAIRA_BASE_URL || BUILTIN_MAIRA_CONFIG.baseUrl;
+    this.apiKey = options?.apiKey || process.env.MAIRA_API_KEY || BUILTIN_MAIRA_CONFIG.apiKey;
+    this.defaultProfileId = options?.defaultProfileId || process.env.MAIRA_PROFILE_ID || BUILTIN_MAIRA_CONFIG.profileId;
+    this.defaultProjectId = options?.defaultProjectId || process.env.MAIRA_PROJECT_ID || process.env.MAIRA_PROJECT_KEY || BUILTIN_MAIRA_CONFIG.projectId;
   }
 
   isConfigured(): boolean {

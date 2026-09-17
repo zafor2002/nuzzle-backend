@@ -22,22 +22,22 @@ const fallbackProvider = new FallbackProvider();
  */
 function buildProviderCascade(): ILLMProvider[] {
   const providers: ILLMProvider[] = [];
-  const preferred = (process.env.LLM_PROVIDER || 'openai').toLowerCase();
+  const preferred = (process.env.LLM_PROVIDER || 'maira').toLowerCase();
 
   // Create all candidate providers
-  const maira = process.env.MAIRA_API_KEY ? new MairaProvider() : null;
+  const maira = new MairaProvider();
   const openai = process.env.OPENAI_API_KEY ? new OpenAIProvider() : null;
   const gemini = process.env.GEMINI_API_KEY ? new GeminiProvider() : null;
 
   // Add the preferred provider first
-  if (preferred === 'maira' && maira) providers.push(maira);
+  if (preferred === 'maira' && maira.isAvailable()) providers.push(maira);
   else if (preferred === 'openai' && openai) providers.push(openai);
   else if (preferred === 'gemini' && gemini) providers.push(gemini);
 
   // Add all remaining providers that aren't already in the list
+  if (maira.isAvailable() && !providers.some(p => p instanceof MairaProvider)) providers.push(maira);
   if (openai && !providers.some(p => p instanceof OpenAIProvider)) providers.push(openai);
   if (gemini && !providers.some(p => p instanceof GeminiProvider)) providers.push(gemini);
-  if (maira && !providers.some(p => p instanceof MairaProvider)) providers.push(maira);
 
   return providers;
 }
@@ -58,9 +58,10 @@ function getProviderCascade(): ILLMProvider[] {
 
 export function getLLMStatus() {
   const cascade = getProviderCascade();
+  const maira = new MairaProvider();
   return {
-    preferred: process.env.LLM_PROVIDER || 'auto',
-    hasMairaKey: Boolean(process.env.MAIRA_API_KEY && process.env.MAIRA_API_KEY.length > 5),
+    preferred: process.env.LLM_PROVIDER || 'maira',
+    hasMairaKey: maira.isAvailable(),
     hasGeminiKey: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 5),
     hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.length > 5),
     activeCascade: cascade.map(p => p.name),
