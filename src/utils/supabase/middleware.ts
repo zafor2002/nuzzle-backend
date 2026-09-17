@@ -5,6 +5,23 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 export const updateSession = async (request: NextRequest) => {
+  // Fast-pass CORS preflight OPTIONS requests immediately
+  if (request.method === "OPTIONS") {
+    return new NextResponse(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, X-Client-Version",
+      },
+    });
+  }
+
+  // Fast-pass API routes — API routes manage their own authentication via Bearer tokens
+  if (request.nextUrl.pathname.startsWith("/api")) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });

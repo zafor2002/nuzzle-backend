@@ -11,15 +11,21 @@ export async function OPTIONS() {
   return handleOptions();
 }
 
-const triageSchema = z.object({
-  petName: z.string().default('Pet'),
-  species: z.string().default('Dog'),
-  breed: z.string().optional(),
-  age: z.string().optional(),
-  symptoms: z.string().min(3, 'Symptoms description must be at least 3 characters long'),
-  duration: z.string().optional(),
-  isProSubscriber: z.boolean().default(false),
-});
+const triageSchema = z
+  .object({
+    petName: z.string().default('Pet'),
+    species: z.string().optional(),
+    petType: z.string().optional(),
+    breed: z.string().optional(),
+    age: z.string().optional(),
+    symptoms: z.string().min(3, 'Symptoms description must be at least 3 characters long'),
+    duration: z.string().optional(),
+    isProSubscriber: z.boolean().default(false),
+  })
+  .transform((data) => ({
+    ...data,
+    species: data.species || data.petType || 'Dog',
+  }));
 
 export const POST = withErrorHandler(async (req: NextRequest) => {
   const body = await req.json();

@@ -46,7 +46,7 @@ export class MairaProvider implements ILLMProvider {
       conversation_type: 'question',
       gpt_profile_id: profileId,
       context_preference: datasetId ? { preferred: { dataset_id: datasetId } } : undefined,
-      top_k: 15,
+      top_k: 5,
       is_keyword_enabled: true,
     });
 
@@ -106,7 +106,7 @@ export class MairaProvider implements ILLMProvider {
       conversation_type: 'chat',
       session_id: `sess_${petName.toLowerCase()}_${Date.now()}`,
       gpt_profile_id: process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '9884416a-abd3-4e9c-a893-b2b0cab2bc60',
-      top_k: 15,
+      top_k: 5,
       is_keyword_enabled: true,
     });
 

@@ -51,8 +51,8 @@ export class MairaClient {
       ...req,
       gpt_profile_id: req.gpt_profile_id || this.defaultProfileId || undefined,
       conversation_type: req.conversation_type || 'question',
-      top_k: req.top_k ?? 20,
-      keyword_ngram: req.keyword_ngram ?? 3,
+      top_k: req.top_k ?? 5,
+      keyword_ngram: req.keyword_ngram ?? 2,
       is_keyword_enabled: req.is_keyword_enabled ?? true,
     };
 
@@ -62,7 +62,7 @@ export class MairaClient {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(7500),
     });
 
     if (!response.ok) {

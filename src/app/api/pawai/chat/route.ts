@@ -24,11 +24,20 @@ const chatSchema = z.object({
     .object({
       petName: z.string().optional(),
       species: z.string().optional(),
+      petType: z.string().optional(),
       breed: z.string().optional(),
       age: z.string().optional(),
       weight: z.string().optional(),
       isProSubscriber: z.boolean().optional(),
     })
+    .transform((ctx) =>
+      ctx
+        ? {
+            ...ctx,
+            species: ctx.species || ctx.petType || 'Dog',
+          }
+        : ctx
+    )
     .optional(),
 });
 
