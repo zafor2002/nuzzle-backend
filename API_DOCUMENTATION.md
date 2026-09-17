@@ -418,17 +418,21 @@ Books a confirmed veterinary slot with instant scheduling verification.
 
 ---
 
-### 3.6 PawAI 24/7 Symptom Triage (`/api/pawai/triage`)
+### 3.6 PawDoctor AI 24/7 Clinical Symptom Triage & Chat (`/api/pawai/*`)
+
+The PawDoctor AI subsystem is backed by a **Provider-Agnostic LLM Adapter Architecture** supporting Google Gemini (`gemini-1.5-flash`), OpenAI (`gpt-4o-mini`), and the local Nuzzle Clinical Heuristic Engine for zero-downtime offline fallback.
 
 #### `POST /api/pawai/triage`
-Performs natural language veterinary symptom evaluation in Bangla and English, classifying conditions into 3 clinical urgency tiers.
+Performs natural language veterinary symptom evaluation in Bengali (বাংলা) and English, classifying conditions into 3 clinical urgency tiers (`emergency`, `moderate`, `low`) with actionable first-aid steps and direct clinic referral matching.
 
 - **Request Body**:
 ```json
 {
   "petName": "Waffles",
   "species": "Dog",
-  "symptoms": "Limping on right front paw after jumping and whining when touched",
+  "breed": "Golden Retriever",
+  "age": "2 years",
+  "symptoms": "Ate dark chocolate 30 minutes ago and is breathing rapidly",
   "isProSubscriber": true
 }
 ```
@@ -437,36 +441,79 @@ Performs natural language veterinary symptom evaluation in Bangla and English, c
 {
   "success": true,
   "data": {
-    "triageId": "trg_17892410",
+    "triageId": "trg_emg_17892410",
     "petName": "Waffles",
     "species": "Dog",
-    "urgency": "moderate",
-    "urgencyLabel": "Schedule Vet Visit (24-48h)",
-    "urgencyColor": "#F59E0B",
-    "summary": "Our clinical triage engine analyzed Waffles's symptoms. Non-emergency clinical evaluation recommended.",
+    "urgency": "emergency",
+    "urgencyLabel": "Emergency Care Required (Immediate)",
+    "urgencyColor": "#EF4444",
+    "summary": "⚠️ CRITICAL EMERGENCY: The reported symptom (\"chocolate\") indicates a potentially life-threatening situation for Waffles. Immediate hands-on emergency veterinary intervention is required.",
     "recommendedActions": [
-      "Ensure access to clean, fresh water at all times.",
-      "Keep your pet indoors in a calm, temperature-controlled room.",
-      "Record a 15-second video of any unusual gait or posture for your veterinarian."
+      "Transport your pet to the nearest 24/7 Emergency Veterinary Hospital immediately.",
+      "Call the hospital while en route so trauma/ICU staff can prepare oxygen and treatment beds.",
+      "Do NOT administer human medications (Paracetamol/Aspirin are deadly toxins).",
+      "Keep your pet calm, warm, and minimize movement during transport."
     ],
     "redFlags": [
-      "Pale or bluish gums",
-      "Difficulty breathing",
-      "Inability to bear any weight on the limb for >24 hours"
+      "Pale, bluish, or brick-red gums",
+      "Loss of consciousness or unresponsiveness",
+      "Persistent seizures or inability to stand"
     ],
     "recommendedClinic": {
-      "id": "vet_3",
-      "name": "Dr. Sarah Al-Mansoor, DVM",
+      "id": "vet_cascade_247",
+      "name": "Dr. Sarah Al-Mansoor, DVM (Trauma Surgeon)",
       "clinicName": "Cascade 24/7 Emergency & Surgical Hospital",
       "phone": "+880 1711-998877",
+      "location": "Gulshan-2 / Dhanmondi, Dhaka",
       "isProPriority": true
     },
-    "disclaimer": "PawDoctor AI provides preliminary guidance based on veterinary triage taxonomies and does not replace in-person diagnosis by a licensed veterinarian."
-  }
+    "disclaimer": "PawDoctor AI provides preliminary guidance based on veterinary triage taxonomies and does not replace in-person diagnosis by a licensed veterinarian.",
+    "createdAt": "2026-09-16T13:20:00.000Z",
+    "provider": "EmergencyFastPath Guardrail"
+  },
+  "message": "Triage analysis completed."
 }
 ```
 
 ---
+
+#### `POST /api/pawai/chat`
+Enables multi-turn conversational veterinary guidance with pet context (breed, age, species, weight) and suggested follow-up questions.
+
+- **Request Body**:
+```json
+{
+  "messages": [
+    { "role": "user", "content": "What human foods are dangerous for my puppy?" }
+  ],
+  "petContext": {
+    "petName": "Waffles",
+    "species": "Dog",
+    "breed": "Golden Retriever",
+    "age": "6 months"
+  }
+}
+```
+- **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "reply": "🥑 Nutrition Insight: For Waffles, a balanced diet with minimum 26% protein and controlled fat is essential. Avoid feeding table scraps, allium vegetables (garlic/onions), grapes, raisins, or sweets.",
+    "suggestedQuestions": [
+      "What are safe fruits & veggies for Waffles?",
+      "How often should Waffles visit the vet?",
+      "What are common signs of food allergies?"
+    ],
+    "provider": "Nuzzle Clinical Heuristic Engine",
+    "timestamp": "2026-09-16T13:20:00.000Z"
+  },
+  "message": "PawDoctor AI response generated."
+}
+```
+
+---
+
 
 ### 3.7 Verified Marketplace (`/api/marketplace`)
 
