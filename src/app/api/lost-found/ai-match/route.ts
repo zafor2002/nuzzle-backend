@@ -5,6 +5,10 @@ import { prisma } from '@/lib/prisma';
 import { mairaClient } from '@/lib/maira/maira-client';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+export const runtime = 'nodejs';
+
 export async function OPTIONS() {
   return handleOptions();
 }
@@ -18,15 +22,43 @@ const aiMatchSchema = z.object({
   contactInfo: z.string().optional(),
 });
 
+/**
+ * Parse MAIRA content field (key: value lines) into a structured map.
+ * Defined at module level to avoid the nested-function-in-callback bug.
+ */
+function parseMairaContent(content?: string): Record<string, string> {
+  if (!content || typeof content !== 'string') return {};
+  const map: Record<string, string> = {};
+  const lines = content.split('\n');
+  for (const line of lines) {
+    const idx = line.indexOf(':');
+    if (idx > -1) {
+      const key = line.substring(0, idx).trim().toLowerCase().replace(/\s+/g, '_');
+      const val = line.substring(idx + 1).trim();
+      if (key && val) map[key] = val;
+    }
+  }
+  return map;
+}
+
 export const POST = withErrorHandler(async (req: NextRequest) => {
   const body = await req.json().catch(() => ({}));
-  const desc = body.sightingDescription || body.description || [body.petType, body.breed, body.color, body.lastSeenLocation, body.location].filter(Boolean).join(' ') || 'Lost pet sighting';
+
+  // Normalize various field name conventions from the frontend
+  const desc =
+    body.sightingDescription ||
+    body.description ||
+    [body.petType, body.breed, body.color, body.lastSeenLocation, body.location]
+      .filter(Boolean)
+      .join(' ') ||
+    'Lost pet sighting';
+
   const normalized = {
     ...body,
     sightingDescription: desc,
   };
-  const parsed = aiMatchSchema.safeParse(normalized);
 
+  const parsed = aiMatchSchema.safeParse(normalized);
   if (!parsed.success) {
     return apiError(parsed.error.issues[0]?.message || 'Invalid match request', 400, parsed.error.issues);
   }
@@ -44,7 +76,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
   if (mairaClient.isConfigured() && datasetId) {
     try {
       let mairaRes;
-      const query = `[Sighting Location: ${location || 'Dhaka'}, Coords: ${latitude || 'N/A'}, ${longitude || 'N/A'}] Sighted Pet: ${sightingDescription}${imageUrl ? ` [Sighting Image Attached: ${imageUrl}]` : ''}`;
+      const query = `[Sighting Location: ${location || 'Dhaka'}, Coords: ${latitude ?? 'N/A'}, ${longitude ?? 'N/A'}] Sighted Pet: ${sightingDescription}${imageUrl ? ` [Sighting Image Attached: ${imageUrl}]` : ''}`;
 
       if (imageUrl) {
         logger.info('LostFound AI Match: Querying Gigalogy MAIRA Multimodal Vision...', { sightingDescription, imageUrl });
@@ -96,7 +128,6 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
 
   // 2. Database retrieval / Fallback matcher
   if (!matchedReport) {
-    // Query active lost reports from Prisma
     let activeLostReports: any[] = [];
     try {
       activeLostReports = await prisma.lostFoundPost.findMany({
@@ -109,49 +140,37 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     }
 
     const lower = sightingDescription.toLowerCase();
-    
-    // Check for German Shepherd / Husky / Golden Retriever / Cat / Color keywords
-    const candidate = activeLostReports.find(r => {
-      const petName = (r.pet?.name || '').toLowerCase();
-      const breed = (r.pet?.breed || '').toLowerCase();
-      const desc = (r.description || '').toLowerCase();
-      return (
-        (breed && lower.includes(breed)) ||
-        (petName && lower.includes(petName)) ||
-        (lower.includes('german') && (desc.includes('shepherd') || desc.includes('german'))) ||
-        (lower.includes('collar') && desc.includes('collar')) ||
-        (lower.includes('banani') && desc.includes('banani'))
-      );
-    }) || activeLostReports[0] || {
-      id: 'report_lf_mock',
-      pet: { name: 'Rocky', breed: 'German Shepherd', species: 'Dog' },
-      owner: { displayName: 'Kazi Tanvir', email: 'tanvir@nuzzle.ai' },
-      description: 'Black and tan German Shepherd with red nylon collar, lost near Banani Road 11.',
-      contactInfo: '+880 1711-998877',
-      lastSeenLat: 23.7925,
-      lastSeenLng: 90.4078,
-    };
+
+    // Keyword-based candidate matching
+    const candidate =
+      activeLostReports.find((r) => {
+        const petName = (r.pet?.name || '').toLowerCase();
+        const breed = (r.pet?.breed || '').toLowerCase();
+        const desc = (r.description || '').toLowerCase();
+        return (
+          (breed && lower.includes(breed)) ||
+          (petName && lower.includes(petName)) ||
+          (lower.includes('german') && (desc.includes('shepherd') || desc.includes('german'))) ||
+          (lower.includes('collar') && desc.includes('collar')) ||
+          (lower.includes('banani') && desc.includes('banani'))
+        );
+      }) ||
+      activeLostReports[0] || {
+        id: 'report_lf_mock',
+        pet: { name: 'Rocky', breed: 'German Shepherd', species: 'Dog' },
+        owner: { displayName: 'Kazi Tanvir', email: 'tanvir@nuzzle.ai' },
+        description: 'Black and tan German Shepherd with red nylon collar, lost near Banani Road 11.',
+        contactInfo: '+880 1711-998877',
+        lastSeenLat: 23.7925,
+        lastSeenLng: 90.4078,
+      };
 
     matchedReport = candidate;
     aiNarrative = `Correlated sighting with active lost report for "${candidate.pet?.name || 'Rocky'}". The observed breed (${candidate.pet?.breed || 'German Shepherd'}) and distinctive features match an alert broadcasted within the 5-mile radar zone.`;
   }
 
-function parseMairaContent(content?: string): Record<string, string> {
-  if (!content || typeof content !== 'string') return {};
-  const map: Record<string, string> = {};
-  const lines = content.split('\n');
-  for (const line of lines) {
-    const idx = line.indexOf(':');
-    if (idx > -1) {
-      const key = line.substring(0, idx).trim();
-      const val = line.substring(idx + 1).trim();
-      map[key] = val;
-    }
-  }
-  return map;
-}
-
-  const mairaFields = parseMairaContent(matchedReport.content);
+  // Parse structured MAIRA content fields if available
+  const mairaFields = parseMairaContent(matchedReport?.content);
 
   const result = {
     matchId: `match_${Date.now()}`,
@@ -166,15 +185,15 @@ function parseMairaContent(content?: string): Record<string, string> {
       longitude,
     },
     matchedLostReport: {
-      id: matchedReport.section_id || matchedReport.id || matchedReport.idx || 'LF-101',
-      petName: mairaFields['pet_name'] || matchedReport.pet?.name || matchedReport.pet_name || 'Rocky',
-      breed: mairaFields['breed'] || matchedReport.pet?.breed || matchedReport.breed || 'German Shepherd',
-      species: mairaFields['species'] || matchedReport.pet?.species || matchedReport.species || 'Dog',
-      ownerName: mairaFields['owner_name'] || matchedReport.owner?.displayName || matchedReport.owner_name || 'Kazi Tanvir',
-      contactPhone: mairaFields['contact_phone'] || matchedReport.contactInfo || matchedReport.contact || '+880 1711-998877',
+      id: matchedReport?.section_id || matchedReport?.id || matchedReport?.idx || 'LF-101',
+      petName: mairaFields['pet_name'] || matchedReport?.pet?.name || matchedReport?.pet_name || 'Rocky',
+      breed: mairaFields['breed'] || matchedReport?.pet?.breed || matchedReport?.breed || 'German Shepherd',
+      species: mairaFields['species'] || matchedReport?.pet?.species || matchedReport?.species || 'Dog',
+      ownerName: mairaFields['owner_name'] || matchedReport?.owner?.displayName || matchedReport?.owner_name || 'Kazi Tanvir',
+      contactPhone: mairaFields['contact_phone'] || matchedReport?.contactInfo || matchedReport?.contact || '+880 1711-998877',
       reward: mairaFields['reward_bdt'] ? `৳${mairaFields['reward_bdt']}` : '৳15,000',
-      registeredDescription: mairaFields['distinctive_features'] || matchedReport.description || matchedReport.content,
-      lastSeenLocation: mairaFields['last_seen_location'] || matchedReport.location || 'Banani Road 11, Dhaka',
+      registeredDescription: mairaFields['distinctive_features'] || matchedReport?.description || matchedReport?.content || '',
+      lastSeenLocation: mairaFields['last_seen_location'] || matchedReport?.location || 'Banani Road 11, Dhaka',
     },
     actionPrompt: 'Owner has been notified of sighting radar correlation. Tap to call or message rescuer directly.',
     provider: providerUsed,
