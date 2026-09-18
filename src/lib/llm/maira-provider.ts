@@ -29,7 +29,7 @@ export class MairaProvider implements ILLMProvider {
     const query = req.symptoms.trim();
 
     const datasetId = process.env.MAIRA_VET_DATASET_ID || '9dfc7c57-c072-441c-b653-1cf98247f990';
-    const profileId = process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '9884416a-abd3-4e9c-a893-b2b0cab2bc60';
+    const profileId = process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '0a8fd1e8-45ac-4870-8f5f-cfbc7ccf58a6';
 
     logger.info('MairaProvider: Querying MAIRA RAG for triage (raw)', { query });
 
@@ -88,7 +88,7 @@ export class MairaProvider implements ILLMProvider {
       query,
       conversation_type: 'chat',
       session_id: `sess_chat_${Date.now()}`,
-      gpt_profile_id: process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '9884416a-abd3-4e9c-a893-b2b0cab2bc60',
+      gpt_profile_id: process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '0a8fd1e8-45ac-4870-8f5f-cfbc7ccf58a6',
       top_k: 5,
       is_keyword_enabled: true,
     });
