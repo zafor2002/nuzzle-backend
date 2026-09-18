@@ -99,12 +99,16 @@ export class OpenAIProvider implements ILLMProvider {
     }
 
     const endpoint = 'https://api.openai.com/v1/chat/completions';
-    const userPrompt = buildChatUserPrompt(req);
+
+    let systemPrompt = VETERINARY_CHAT_SYSTEM_PROMPT;
+    if (req.petContext) {
+      const { petName, species, breed, age, weight } = req.petContext;
+      systemPrompt += `\n\n[Active Patient Context: Name: ${petName || 'Unknown'}, Species: ${species || 'Pet'}, Breed: ${breed || 'Mixed'}, Age: ${age || 'N/A'}, Weight: ${weight || 'N/A'}]`;
+    }
 
     const messages = [
-      { role: 'system', content: VETERINARY_CHAT_SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       ...req.messages.map(m => ({ role: m.role, content: m.content })),
-      { role: 'user', content: userPrompt },
     ];
 
     const response = await fetch(endpoint, {

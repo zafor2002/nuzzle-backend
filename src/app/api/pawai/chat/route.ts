@@ -22,18 +22,21 @@ const chatSchema = z.object({
     .min(1, 'At least one message is required'),
   petContext: z
     .object({
+      name: z.string().optional(),
       petName: z.string().optional(),
       species: z.string().optional(),
       petType: z.string().optional(),
       breed: z.string().optional(),
-      age: z.string().optional(),
-      weight: z.string().optional(),
+      age: z.union([z.string(), z.number()]).transform(v => v !== undefined ? String(v) : undefined).optional(),
+      weight: z.union([z.string(), z.number()]).transform(v => v !== undefined ? String(v) : undefined).optional(),
+      gender: z.string().optional(),
       isProSubscriber: z.boolean().optional(),
     })
     .transform((ctx) =>
       ctx
         ? {
             ...ctx,
+            petName: ctx.petName || ctx.name,
             species: ctx.species || ctx.petType || 'Dog',
           }
         : ctx

@@ -104,22 +104,21 @@ export class GeminiProvider implements ILLMProvider {
     }
 
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
-    const userPrompt = buildChatUserPrompt(req);
+
+    let systemInstruction = VETERINARY_CHAT_SYSTEM_PROMPT;
+    if (req.petContext) {
+      const { petName, species, breed, age, weight } = req.petContext;
+      systemInstruction += `\n\n[Active Patient Context: Name: ${petName || 'Unknown'}, Species: ${species || 'Pet'}, Breed: ${breed || 'Mixed'}, Age: ${age || 'N/A'}, Weight: ${weight || 'N/A'}]`;
+    }
 
     const contents = req.messages.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],
     }));
 
-    // Append context-enriched user query
-    contents.push({
-      role: 'user',
-      parts: [{ text: userPrompt }],
-    });
-
     const requestBody = {
       system_instruction: {
-        parts: [{ text: VETERINARY_CHAT_SYSTEM_PROMPT }],
+        parts: [{ text: systemInstruction }],
       },
       contents,
       generationConfig: {

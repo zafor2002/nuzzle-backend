@@ -96,9 +96,21 @@ export class MairaProvider implements ILLMProvider {
 
     const lastMsg = req.messages[req.messages.length - 1]?.content || '';
     const petName = req.petContext?.petName || 'your pet';
+
+    // Include previous dialogue turns as context memory
+    let conversationContext = '';
+    if (req.messages.length > 1) {
+      const priorTurns = req.messages
+        .slice(0, -1)
+        .slice(-4)
+        .map(m => `${m.role === 'user' ? 'User' : 'PawDoctor'}: ${m.content}`)
+        .join(' | ');
+      conversationContext = ` [Prior Turns: ${priorTurns}]`;
+    }
+
     const query = req.petContext
-      ? `[Pet: ${petName}, Species: ${req.petContext.species || 'Dog'}, Breed: ${req.petContext.breed || 'N/A'}] ${lastMsg}`
-      : lastMsg;
+      ? `[Patient: ${petName}, Species: ${req.petContext.species || 'Dog'}, Breed: ${req.petContext.breed || 'N/A'}]${conversationContext} Question: ${lastMsg}`
+      : `${conversationContext} ${lastMsg}`.trim();
 
     const mairaRes = await mairaClient.ask({
       user_id: `nuzzle_usr_${Date.now()}`,
