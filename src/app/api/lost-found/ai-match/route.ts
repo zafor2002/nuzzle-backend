@@ -178,7 +178,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     const dbReports = await prisma.lostFoundPost.findMany({
       where: { status: 'lost' },
       include: { pet: true, owner: true },
-      take: 10,
+      take: 50,
     });
     if (dbReports && dbReports.length > 0) {
       activeLostReports = dbReports.map(r => ({
