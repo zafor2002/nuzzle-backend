@@ -113,7 +113,11 @@ function generateDynamicScanFallback(species: string, breedHint?: string): PetSc
 }
 
 export const POST = withErrorHandler(async (req: NextRequest) => {
-  const body = await req.json().catch(() => ({}));
+  const raw = await req.json().catch(() => ({}));
+  const body = {
+    ...raw,
+    image: raw.image || raw.imageUrl || raw.photoUrl || '',
+  };
   const parsed = scanSchema.safeParse(body);
 
   if (!parsed.success) {

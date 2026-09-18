@@ -28,7 +28,11 @@ const triageSchema = z
   }));
 
 export const POST = withErrorHandler(async (req: NextRequest) => {
-  const body = await req.json();
+  const raw = await req.json().catch(() => ({}));
+  const body = {
+    ...raw,
+    symptoms: raw.symptoms || raw.description || raw.notes || '',
+  };
   const parsed = triageSchema.safeParse(body);
 
   if (!parsed.success) {
