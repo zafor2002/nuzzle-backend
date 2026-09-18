@@ -20,25 +20,18 @@ export class MairaProvider implements ILLMProvider {
   }
 
   async triage(req: TriageRequest): Promise<TriageResult> {
-    // 1. Emergency safety fast-path
-    const emergency = checkEmergencyFastPath(req);
-    if (emergency) {
-      return emergency;
-    }
-
     if (!this.isAvailable()) {
       throw new Error('Gigalogy MAIRA API key is not configured');
     }
 
     const petName = req.petName || 'Pet';
     const species = req.species || 'Dog';
-    const breed = req.breed || 'Mixed';
-    const query = `[Patient: ${petName}, Species: ${species}, Breed: ${breed}, Age: ${req.age || 'N/A'}, Duration: ${req.duration || 'N/A'}] Symptoms: ${req.symptoms}`;
+    const query = req.symptoms.trim();
 
     const datasetId = process.env.MAIRA_VET_DATASET_ID || '9dfc7c57-c072-441c-b653-1cf98247f990';
     const profileId = process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '9884416a-abd3-4e9c-a893-b2b0cab2bc60';
 
-    logger.info('MairaProvider: Querying MAIRA RAG for triage', { petName, symptoms: req.symptoms });
+    logger.info('MairaProvider: Querying MAIRA RAG for triage (raw)', { query });
 
     const mairaRes = await mairaClient.ask({
       user_id: `nuzzle_usr_${Date.now()}`,
@@ -50,42 +43,24 @@ export class MairaProvider implements ILLMProvider {
       is_keyword_enabled: true,
     });
 
-    let urgency: 'low' | 'moderate' | 'emergency' = 'moderate';
-    let urgencyLabel = 'Schedule Vet Visit (24-48h)';
-    let urgencyColor = '#F59E0B';
-
     const lowerAns = mairaRes.answer.toLowerCase();
-    if (lowerAns.includes('emergency') || lowerAns.includes('critical') || lowerAns.includes('immediate')) {
-      urgency = 'emergency';
-      urgencyLabel = 'Emergency Care Required (Immediate)';
-      urgencyColor = '#EF4444';
-    } else if (lowerAns.includes('mild') || lowerAns.includes('home') || lowerAns.includes('monitor')) {
-      urgency = 'low';
-      urgencyLabel = 'Monitor at Home';
-      urgencyColor = '#10B981';
-    }
+    const isEmergency = lowerAns.includes('emergency') || lowerAns.includes('critical') || lowerAns.includes('immediate');
+    const urgency: 'low' | 'moderate' | 'emergency' = isEmergency ? 'emergency' : 'low';
 
     return {
       triageId: `trg_maira_${Date.now()}`,
       petName,
       species,
       urgency,
-      urgencyLabel,
-      urgencyColor,
-      summary: mairaRes.answer,
-      recommendedActions: [
-        'Review the verified clinical triage guidelines from Gigalogy MAIRA.',
-        'Keep pet comfortable and hydrated in a calm, quiet room.',
-        'Consult with your licensed veterinarian if symptoms progress.',
-      ],
-      redFlags: [
-        'Rapid shallow breathing or collapse',
-        'Persistent vomiting or pale gums',
-      ],
-      recommendedClinic: urgency === 'emergency' ? EMERGENCY_CLINIC : DEFAULT_CLINIC,
-      disclaimer: 'PawDoctor AI powered by Gigalogy MAIRA RAG provides clinical decision support. Always consult a licensed veterinarian for urgent diagnoses.',
+      urgencyLabel: '',
+      urgencyColor: '',
+      summary: mairaRes.answer.trim(),
+      recommendedActions: [],
+      redFlags: [],
+      recommendedClinic: isEmergency ? EMERGENCY_CLINIC : DEFAULT_CLINIC,
+      disclaimer: '',
       createdAt: new Date().toISOString(),
-      provider: `${this.name} (Ref Docs: ${mairaRes.reference_documents?.length || 0})`,
+      provider: this.name,
     };
   }
 
@@ -95,40 +70,31 @@ export class MairaProvider implements ILLMProvider {
     }
 
     const lastMsg = req.messages[req.messages.length - 1]?.content || '';
-    const petName = req.petContext?.petName || 'your pet';
 
-    // Include previous dialogue turns as context memory
-    let conversationContext = '';
+    // Include multi-turn context memory cleanly without artificial dog tags
+    let query = lastMsg.trim();
     if (req.messages.length > 1) {
-      const priorTurns = req.messages
-        .slice(0, -1)
-        .slice(-4)
-        .map(m => `${m.role === 'user' ? 'User' : 'PawDoctor'}: ${m.content}`)
-        .join(' | ');
-      conversationContext = ` [Prior Turns: ${priorTurns}]`;
+      const turns = req.messages
+        .slice(-6)
+        .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+        .join('\n');
+      query = turns;
     }
 
-    const query = req.petContext
-      ? `[Patient: ${petName}, Species: ${req.petContext.species || 'Dog'}, Breed: ${req.petContext.breed || 'N/A'}]${conversationContext} Question: ${lastMsg}`
-      : `${conversationContext} ${lastMsg}`.trim();
+    logger.info('MairaProvider: Querying MAIRA RAG for chat (raw)', { queryLength: query.length });
 
     const mairaRes = await mairaClient.ask({
       user_id: `nuzzle_usr_${Date.now()}`,
       query,
       conversation_type: 'chat',
-      session_id: `sess_${petName.toLowerCase()}_${Date.now()}`,
+      session_id: `sess_chat_${Date.now()}`,
       gpt_profile_id: process.env.MAIRA_VET_PROFILE_ID || process.env.MAIRA_PROFILE_ID || '9884416a-abd3-4e9c-a893-b2b0cab2bc60',
       top_k: 5,
       is_keyword_enabled: true,
     });
 
     return {
-      reply: mairaRes.answer,
-      suggestedQuestions: [
-        `What are safe foods and supplements for ${petName}?`,
-        `How can I prevent allergies in my pet?`,
-        `When should ${petName} visit a certified clinic?`,
-      ],
+      reply: mairaRes.answer.trim(),
       provider: this.name,
       timestamp: new Date().toISOString(),
     };

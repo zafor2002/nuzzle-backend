@@ -62,7 +62,7 @@ export class MairaClient {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(7500),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
