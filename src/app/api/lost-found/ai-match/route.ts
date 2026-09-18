@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiSuccess, apiError, handleOptions, withErrorHandler } from '@/lib/api-response';
@@ -91,6 +93,51 @@ function parseMairaContent(content?: string): Record<string, string> {
   return map;
 }
 
+/**
+ * Load candidate lost pets from datasets/lost_found_radar_dataset.csv
+ */
+function loadDatasetCandidates(): any[] {
+  try {
+    const possiblePaths = [
+      path.join(process.cwd(), 'datasets', 'lost_found_radar_dataset.csv'),
+      path.join(process.cwd(), '..', 'datasets', 'lost_found_radar_dataset.csv'),
+    ];
+    const csvPath = possiblePaths.find(p => fs.existsSync(p));
+    if (csvPath) {
+      const raw = fs.readFileSync(csvPath, 'utf8');
+      const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+      const records = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length >= 12) {
+          records.push({
+            id: cols[0].trim(),
+            pet: {
+              name: cols[1].trim(),
+              species: cols[2].trim(),
+              breed: cols[3].trim(),
+              avatarUrl: cols[10]?.trim() || 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=800',
+            },
+            owner: {
+              displayName: cols[11]?.trim() || 'Pet Owner',
+              email: 'owner@nuzzle.ai',
+            },
+            description: `${cols[4]}, ${cols[5]}. Collar: ${cols[6]}. Location: ${cols[7]}`,
+            contactInfo: cols[12]?.trim() || '+880 1711-998877',
+            reward: `৳${cols[13]?.trim() || '15,000'}`,
+            location: cols[7]?.trim() || 'Dhaka',
+            imageUrl: cols[10]?.trim() || 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=800',
+          });
+        }
+      }
+      if (records.length > 0) return records;
+    }
+  } catch (err) {
+    logger.warn('Failed to load dataset from CSV', { error: String(err) });
+  }
+  return CANDIDATE_LOST_REPORTS;
+}
+
 export const POST = withErrorHandler(async (req: NextRequest) => {
   const body = await req.json().catch(() => ({}));
 
@@ -145,11 +192,12 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         imageUrl: r.pet?.avatarUrl || 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=800&auto=format&fit=crop&q=80',
       }));
     }
-  } catch {
-    logger.warn('Prisma query bypassed, using curated candidate list for visual matching');
+  } catch (dbErr) {
+    logger.warn('Prisma fetch notice, utilizing benchmark dataset', { error: String(dbErr) });
   }
 
-  const candidates = activeLostReports.length > 0 ? activeLostReports : CANDIDATE_LOST_REPORTS;
+  const datasetCandidates = loadDatasetCandidates();
+  const candidates = activeLostReports.length > 0 ? [...activeLostReports, ...datasetCandidates] : datasetCandidates;
 
   // =========================================================================
   // 1A. Hugging Face Vision Biometric Matcher (Free Open-Source Qwen2.5-VL-72B)
