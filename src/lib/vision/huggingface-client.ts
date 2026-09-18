@@ -152,15 +152,18 @@ export class HuggingFaceClient {
     sightingDescription: string,
     model = 'Qwen/Qwen2.5-VL-72B-Instruct'
   ): Promise<{
-    matchedCandidateId: string;
+    isPet: boolean;
+    detectedSubject?: string;
+    detectedSpecies?: string;
+    detectedBreed?: string;
+    matchedCandidateId: string | null;
+    matchStatus: 'VISUAL_BIOMETRIC_MATCH' | 'NO_MATCH' | 'NOT_A_PET';
     confidenceScore: number;
-    detectedSpecies: string;
-    detectedBreed: string;
-    visualComparison: {
-      coatMatch: string;
-      facialAndEars: string;
-      collarObserved: string;
-      distinctiveFeatures: string;
+    visualComparison?: {
+      coatMatch?: string;
+      facialAndEars?: string;
+      collarObserved?: string;
+      distinctiveFeatures?: string;
     };
     aiAnalysis: string;
   } | null> {
@@ -176,30 +179,66 @@ export class HuggingFaceClient {
       .join('\n');
 
     const prompt = `You are Nuzzle Visual Pet Biometric AI.
-Analyze this photo of a sighted/found pet and determine the closest match among these registered lost pets:
+Analyze the provided image with clinical accuracy.
+
+STEP 1 - SUBJECT VERIFICATION:
+- Is there an actual domestic pet (dog, cat, rabbit, bird, etc.) in the image?
+- If the image depicts a human (politician, celebrity, man, woman, person, selfie), clothing, car, document, building, food, or any non-pet object:
+  Set:
+  "isPet": false,
+  "detectedSubject": "<human / person / object detected>",
+  "matchedCandidateId": null,
+  "matchStatus": "NOT_A_PET",
+  "confidenceScore": 0.0,
+  "aiAnalysis": "The uploaded photo does not depict a pet. Sighting analysis detected a human or non-pet subject. Please upload a clear photo of the sighted animal."
+
+STEP 2 - PET BIOMETRIC COMPARISON (Only if isPet is true):
+Analyze the pet's species, breed morphology, facial structure, coat coloration, and any visible collar/tag.
+Compare against these candidate lost pets:
 ${candidateSummary}
+
+Rules for matching:
+- A dog must NEVER match a cat or rabbit.
+- Different breeds (e.g. Beagle vs German Shepherd) must NOT match unless there is clear visual ambiguity.
+- If there is a genuine visual match with one candidate, set:
+  "isPet": true,
+  "matchedCandidateId": "<ID of matching candidate>",
+  "matchStatus": "VISUAL_BIOMETRIC_MATCH",
+  "confidenceScore": <number between 0.75 and 0.98>
+- If the pet does NOT match any candidate in the list, set:
+  "isPet": true,
+  "matchedCandidateId": null,
+  "matchStatus": "NO_MATCH",
+  "confidenceScore": <number between 0.05 and 0.35>,
+  "aiAnalysis": "Sighted pet identified as a <detectedBreed>, but does not match any currently active lost pet reports in the radar database."
 
 User sighting notes: "${sightingDescription}".
 
-Evaluate:
-1. Coat coloration, patterns, and markings
-2. Ear posture (floppy, erect) and facial structure
-3. Distinguishing features or accessories
-
-Return a JSON object with:
+Return ONLY a strict JSON object:
 {
-  "matchedCandidateId": "<ID of the best matching candidate>",
-  "confidenceScore": <number between 0.85 and 0.98>,
-  "detectedSpecies": "<Dog, Cat, etc.>",
-  "detectedBreed": "<identified breed>",
+  "isPet": <boolean>,
+  "detectedSubject": "<e.g. Human / Dog / Cat>",
+  "detectedSpecies": "<Dog, Cat, Rabbit, Bird, or None>",
+  "detectedBreed": "<identified breed or N/A>",
+  "matchedCandidateId": <string ID or null>,
+  "matchStatus": "<VISUAL_BIOMETRIC_MATCH | NO_MATCH | NOT_A_PET>",
+  "confidenceScore": <number between 0.0 and 1.0>,
   "visualComparison": {
     "coatMatch": "<comparison of coat color and patterns>",
     "facialAndEars": "<comparison of ears, eyes, muzzle>",
     "collarObserved": "<collar or tag observations>",
     "distinctiveFeatures": "<any notable unique marks>"
   },
-  "aiAnalysis": "<two sentence clinical explanation of the match>"
+  "aiAnalysis": "<crisp 2-sentence clinical explanation>"
 }`;
+
+    let resolvedImageUrl = imageUrl;
+    try {
+      const buf = await this.resolveImageBuffer(imageUrl);
+      resolvedImageUrl = `data:image/jpeg;base64,${buf.toString('base64')}`;
+    } catch (imgErr) {
+      logger.warn('Notice converting image to base64:', { error: String(imgErr) });
+    }
 
     const endpoint = 'https://router.huggingface.co/v1/chat/completions';
     logger.info(`Hugging Face Vision: Comparing pet photo with ${candidates.length} candidates using ${model}`);
@@ -217,7 +256,7 @@ Return a JSON object with:
             role: 'user',
             content: [
               { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imageUrl } },
+              { type: 'image_url', image_url: { url: resolvedImageUrl } },
             ],
           },
         ],

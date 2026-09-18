@@ -216,21 +216,67 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         sightingDescription
       );
 
-      if (hfMatch && hfMatch.matchedCandidateId) {
-        const found = candidates.find(c => c.id === hfMatch.matchedCandidateId) || candidates[0];
-        matchedReport = found;
-        matchConfidence = typeof hfMatch.confidenceScore === 'number' ? hfMatch.confidenceScore : 0.95;
-        providerUsed = 'Hugging Face Vision Biometric (Qwen2.5-VL-72B)';
-        aiNarrative = hfMatch.aiAnalysis || `Hugging Face Vision confirmed biometric correlation with ${found.pet?.name}. Visual features and coat patterns align.`;
-        visualComparison = hfMatch.visualComparison || {
-          coatMatch: `Identified matching coat pattern for ${found.pet?.breed || 'canine'}`,
-          facialAndEars: 'Facial bone structure and ear carriage align with registered records',
-          collarObserved: 'Collar appearance matches alert broadcast',
-          distinctiveFeatures: 'Biometric visual markers positively identified',
-        };
+      if (hfMatch) {
+        if (!hfMatch.isPet || hfMatch.matchStatus === 'NOT_A_PET') {
+          return apiSuccess({
+            matchId: `match_${Date.now()}`,
+            matchStatus: 'NOT_A_PET',
+            isPet: false,
+            confidenceScore: 0.0,
+            aiAnalysis: hfMatch.aiAnalysis || 'The uploaded photo does not depict a pet. Sighting analysis detected a human or non-pet subject. Please upload a clear photo of the animal.',
+            sightingDetails: {
+              description: sightingDescription,
+              imageUrl,
+              location,
+              latitude,
+              longitude,
+            },
+            matchedLostReport: null,
+            actionPrompt: 'Please upload a photo showing the sighted or found pet clearly.',
+            provider: 'Hugging Face Vision Biometric (Qwen2.5-VL-72B)',
+            createdAt: new Date().toISOString(),
+          }, 200, 'Image does not contain a pet.');
+        }
+
+        if (hfMatch.matchStatus === 'NO_MATCH' || !hfMatch.matchedCandidateId || (typeof hfMatch.confidenceScore === 'number' && hfMatch.confidenceScore < 0.60)) {
+          return apiSuccess({
+            matchId: `match_${Date.now()}`,
+            matchStatus: 'NO_MATCH',
+            isPet: true,
+            confidenceScore: typeof hfMatch.confidenceScore === 'number' ? hfMatch.confidenceScore : 0.15,
+            aiAnalysis: hfMatch.aiAnalysis || 'Visual biometric scan found no close correlation among active lost pet reports in the radar database.',
+            detectedSpecies: hfMatch.detectedSpecies,
+            detectedBreed: hfMatch.detectedBreed,
+            sightingDetails: {
+              description: sightingDescription,
+              imageUrl,
+              location,
+              latitude,
+              longitude,
+            },
+            matchedLostReport: null,
+            actionPrompt: 'No active lost report matches this sighting. An open community sighting alert has been logged.',
+            provider: 'Hugging Face Vision Biometric (Qwen2.5-VL-72B)',
+            createdAt: new Date().toISOString(),
+          }, 200, 'No matching lost pet found.');
+        }
+
+        const found = candidates.find(c => c.id === hfMatch.matchedCandidateId);
+        if (found) {
+          matchedReport = found;
+          matchConfidence = typeof hfMatch.confidenceScore === 'number' ? hfMatch.confidenceScore : 0.95;
+          providerUsed = 'Hugging Face Vision Biometric (Qwen2.5-VL-72B)';
+          aiNarrative = hfMatch.aiAnalysis || `Hugging Face Vision confirmed biometric correlation with ${found.pet?.name}. Visual features and coat patterns align.`;
+          visualComparison = hfMatch.visualComparison || {
+            coatMatch: `Identified matching coat pattern for ${found.pet?.breed || 'canine'}`,
+            facialAndEars: 'Facial bone structure and ear carriage align with registered records',
+            collarObserved: 'Collar appearance matches alert broadcast',
+            distinctiveFeatures: 'Biometric visual markers positively identified',
+          };
+        }
       }
     } catch (hfErr: any) {
-      logger.warn('Hugging Face Vision matching notice, falling back to next provider:', hfErr?.message || hfErr);
+      logger.warn('Hugging Face Vision matching notice, falling back to next provider:', { error: String(hfErr?.message || hfErr) });
     }
   }
 
@@ -262,26 +308,30 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
             {
               role: 'system',
               content: `You are Nuzzle Visual Pet Biometric AI.
-You receive a photograph of a sighted/found pet and a list of registered active lost pets.
-Perform a strict visual comparative analysis between the pet in the photo and the candidate lost reports.
-Evaluate:
-1. Species and breed morphology
-2. Coat coloration, patterns, and markings
-3. Ear posture (floppy, erect, semi-pricked) and muzzle structure
-4. Collar, tags, or harnesses visible
+Perform strict image analysis.
+First, check if a real pet (dog, cat, rabbit, bird) is in the photo. If it contains a human, person, portrait, or non-pet item:
+set "isPet": false, "matchedCandidateId": null, "matchStatus": "NOT_A_PET", "confidenceScore": 0.0.
 
-Return a strict JSON object with:
-- "matchedCandidateId": string ID matching one of the candidate IDs, or the closest candidate
-- "confidenceScore": number between 0.85 and 0.98
-- "detectedSpecies": detected species (Dog, Cat, etc.)
-- "detectedBreed": identified breed name
-- "visualComparison": {
-    "coatMatch": "Specific observation comparing fur color, markings and saddle pattern to the registered pet",
-    "facialAndEars": "Observation regarding eye shape, snout, and ear carriage",
-    "collarObserved": "Observation of visible collar/harness matching registered details",
-    "distinctiveFeatures": "Any key identifying visual marks detected in the sighting image"
-  }
-- "aiAnalysis": "A crisp, authoritative 2-sentence clinical explanation of why this photo correlates with the lost pet."`,
+If a pet is visible, compare against the lost pet candidates.
+If there is no genuine visual match, set "isPet": true, "matchedCandidateId": null, "matchStatus": "NO_MATCH", "confidenceScore": 0.2.
+If there is a strong match, set "isPet": true, "matchedCandidateId": "<ID>", "matchStatus": "VISUAL_BIOMETRIC_MATCH", "confidenceScore": 0.85-0.98.
+
+Return strict JSON:
+{
+  "isPet": boolean,
+  "matchedCandidateId": string | null,
+  "matchStatus": "VISUAL_BIOMETRIC_MATCH" | "NO_MATCH" | "NOT_A_PET",
+  "confidenceScore": number,
+  "detectedSpecies": string,
+  "detectedBreed": string,
+  "visualComparison": {
+    "coatMatch": string,
+    "facialAndEars": string,
+    "collarObserved": string,
+    "distinctiveFeatures": string
+  },
+  "aiAnalysis": string
+}`,
             },
             {
               role: 'user',
@@ -301,7 +351,7 @@ Return a strict JSON object with:
             },
           ],
           response_format: { type: 'json_object' },
-          temperature: 0.2,
+          temperature: 0.1,
         }),
         signal: AbortSignal.timeout(9000),
       });
@@ -311,21 +361,67 @@ Return a strict JSON object with:
         const contentStr = visionData?.choices?.[0]?.message?.content;
         if (contentStr) {
           const parsedVision = JSON.parse(contentStr);
-          const found = candidates.find(c => c.id === parsedVision.matchedCandidateId) || candidates[0];
-          matchedReport = found;
-          matchConfidence = typeof parsedVision.confidenceScore === 'number' ? parsedVision.confidenceScore : 0.95;
-          aiNarrative = parsedVision.aiAnalysis || `Visual biometric correlation confirmed match with ${found.pet?.name}. Coat morphology and facial features strongly align with registered report.`;
-          visualComparison = parsedVision.visualComparison || {
-            coatMatch: `Identified matching coat pattern for ${found.pet?.breed || 'canine'}`,
-            facialAndEars: 'Facial bone structure and ear carriage align with registered records',
-            collarObserved: 'Collar appearance matches alert broadcast',
-            distinctiveFeatures: 'Biometric visual markers positively identified',
-          };
-          providerUsed = 'OpenAI GPT-4o Multimodal Vision Biometric';
+          if (parsedVision.isPet === false || parsedVision.matchStatus === 'NOT_A_PET') {
+            return apiSuccess({
+              matchId: `match_${Date.now()}`,
+              matchStatus: 'NOT_A_PET',
+              isPet: false,
+              confidenceScore: 0.0,
+              aiAnalysis: parsedVision.aiAnalysis || 'The uploaded photo does not contain a pet. Please upload a clear photo of the animal.',
+              sightingDetails: {
+                description: sightingDescription,
+                imageUrl,
+                location,
+                latitude,
+                longitude,
+              },
+              matchedLostReport: null,
+              actionPrompt: 'Please upload a photo showing the animal clearly.',
+              provider: 'OpenAI GPT-4o Multimodal Vision Biometric',
+              createdAt: new Date().toISOString(),
+            }, 200, 'Image does not contain a pet.');
+          }
+
+          if (parsedVision.matchStatus === 'NO_MATCH' || !parsedVision.matchedCandidateId) {
+            return apiSuccess({
+              matchId: `match_${Date.now()}`,
+              matchStatus: 'NO_MATCH',
+              isPet: true,
+              confidenceScore: typeof parsedVision.confidenceScore === 'number' ? parsedVision.confidenceScore : 0.2,
+              aiAnalysis: parsedVision.aiAnalysis || 'Visual biometric scan found no close match among active lost pet reports.',
+              detectedSpecies: parsedVision.detectedSpecies,
+              detectedBreed: parsedVision.detectedBreed,
+              sightingDetails: {
+                description: sightingDescription,
+                imageUrl,
+                location,
+                latitude,
+                longitude,
+              },
+              matchedLostReport: null,
+              actionPrompt: 'No active lost report matches this sighting.',
+              provider: 'OpenAI GPT-4o Multimodal Vision Biometric',
+              createdAt: new Date().toISOString(),
+            }, 200, 'No matching lost pet found.');
+          }
+
+          const found = candidates.find(c => c.id === parsedVision.matchedCandidateId);
+          if (found) {
+            matchedReport = found;
+            matchConfidence = typeof parsedVision.confidenceScore === 'number' ? parsedVision.confidenceScore : 0.92;
+            aiNarrative = parsedVision.aiAnalysis || `Visual biometric correlation confirmed match with ${found.pet?.name}.`;
+            visualComparison = parsedVision.visualComparison || {
+              coatMatch: `Identified matching coat pattern for ${found.pet?.breed || 'canine'}`,
+              facialAndEars: 'Facial bone structure aligns with registered records',
+              collarObserved: 'Collar appearance matches alert broadcast',
+              distinctiveFeatures: 'Biometric visual markers positively identified',
+            };
+            providerUsed = 'OpenAI GPT-4o Multimodal Vision Biometric';
+          }
         }
       }
     } catch (visionErr: any) {
-      logger.warn('LostFound Vision comparison timed out or errored, falling back to semantic/radar matcher:', visionErr?.message);
+      logger.warn('LostFound Vision comparison notice:', { error: String(visionErr?.message) });
     }
   }
 
@@ -345,6 +441,28 @@ Return a strict JSON object with:
         is_keyword_enabled: true,
       });
 
+      const ansLower = (mairaRes.answer || '').toLowerCase();
+      if (ansLower.includes('not a pet') || ansLower.includes('not of a pet') || ansLower.includes('no pet')) {
+        return apiSuccess({
+          matchId: `match_${Date.now()}`,
+          matchStatus: 'NOT_A_PET',
+          isPet: false,
+          confidenceScore: 0.0,
+          aiAnalysis: mairaRes.answer,
+          sightingDetails: {
+            description: sightingDescription,
+            imageUrl,
+            location,
+            latitude,
+            longitude,
+          },
+          matchedLostReport: null,
+          actionPrompt: 'Please upload a photo showing the animal clearly.',
+          provider: 'Gigalogy MAIRA Managed RAG',
+          createdAt: new Date().toISOString(),
+        }, 200, 'Image does not contain a pet.');
+      }
+
       aiNarrative = mairaRes.answer;
       matchConfidence = mairaRes.evaluation?.similarity || 0.94;
       providerUsed = 'Gigalogy MAIRA Managed RAG';
@@ -353,7 +471,7 @@ Return a strict JSON object with:
         matchedReport = mairaRes.reference_documents[0];
       }
     } catch (err: any) {
-      logger.warn('MAIRA RAG query failed, falling back to local radar database:', err?.message || err);
+      logger.warn('MAIRA RAG query notice:', { error: String(err?.message || err) });
     }
   }
 
@@ -362,38 +480,46 @@ Return a strict JSON object with:
   // =========================================================================
   if (!matchedReport) {
     const lower = sightingDescription.toLowerCase();
-    const candidate =
-      candidates.find((r) => {
-        const petName = (r.pet?.name || '').toLowerCase();
-        const breed = (r.pet?.breed || '').toLowerCase();
-        const desc = (r.description || '').toLowerCase();
-        return (
-          (breed && lower.includes(breed)) ||
-          (petName && lower.includes(petName)) ||
-          (lower.includes('beagle') && (desc.includes('beagle') || petName.includes('archie'))) ||
-          (lower.includes('archie') && petName.includes('archie')) ||
-          (lower.includes('german') && (desc.includes('shepherd') || desc.includes('german'))) ||
-          (lower.includes('rocky') && petName.includes('rocky')) ||
-          (lower.includes('retriever') && desc.includes('retriever')) ||
-          (lower.includes('cat') && (desc.includes('cat') || r.pet?.species === 'Cat')) ||
-          (lower.includes('collar') && desc.includes('collar')) ||
-          (lower.includes('banani') && desc.includes('banani'))
-        );
-      }) ||
-      candidates[0];
+    const candidate = candidates.find((r) => {
+      const petName = (r.pet?.name || '').toLowerCase();
+      const breed = (r.pet?.breed || '').toLowerCase();
+      const desc = (r.description || '').toLowerCase();
+      return (
+        (breed && lower.includes(breed)) ||
+        (petName && lower.includes(petName)) ||
+        (lower.includes('beagle') && (desc.includes('beagle') || petName.includes('archie'))) ||
+        (lower.includes('german') && (desc.includes('shepherd') || desc.includes('german'))) ||
+        (lower.includes('rocky') && petName.includes('rocky')) ||
+        (lower.includes('retriever') && desc.includes('retriever')) ||
+        (lower.includes('persian') && (desc.includes('persian') || petName.includes('milo')))
+      );
+    });
 
-    matchedReport = candidate;
-    matchConfidence = 0.93;
-    aiNarrative = `Correlated sighting with active lost report for "${candidate.pet?.name || 'Rocky'}". The observed breed (${candidate.pet?.breed || 'German Shepherd'}) and distinctive features match an alert broadcasted within the 5-mile radar zone.`;
-    
-    if (imageUrl && !visualComparison) {
-      visualComparison = {
-        coatMatch: `Coat pattern matches registered ${candidate.pet?.breed} characteristics.`,
-        facialAndEars: 'Visual ear carriage and snout profile match database imagery.',
-        collarObserved: 'Collar markings correlate with alert report details.',
-        distinctiveFeatures: 'High visual similarity detected across primary biometric landmarks.',
-      };
-      providerUsed = 'Neural Biometric Image Analyzer (Local)';
+    if (candidate) {
+      matchedReport = candidate;
+      matchConfidence = 0.88;
+      aiNarrative = `Correlated sighting notes with active lost report for "${candidate.pet?.name || 'Rocky'}". Sighted details match an alert broadcasted within the local radar zone.`;
+      providerUsed = 'Local Geospatial & Semantic Radar';
+    } else {
+      // True negative: Do NOT fabricate a false match when nothing matches!
+      return apiSuccess({
+        matchId: `match_${Date.now()}`,
+        matchStatus: 'NO_MATCH',
+        isPet: true,
+        confidenceScore: 0.15,
+        aiAnalysis: 'No active lost pet reports in the radar zone match the provided description or image.',
+        sightingDetails: {
+          description: sightingDescription,
+          imageUrl,
+          location,
+          latitude,
+          longitude,
+        },
+        matchedLostReport: null,
+        actionPrompt: 'No active lost reports matched this sighting. An open sighting report has been logged.',
+        provider: providerUsed,
+        createdAt: new Date().toISOString(),
+      }, 200, 'No matching lost pet found.');
     }
   }
 
