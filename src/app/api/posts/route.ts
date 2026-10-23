@@ -155,6 +155,43 @@ export async function GET(req: NextRequest) {
         hashtags: ['bengalcat', 'catlife', 'queenstatus'],
         comments: [],
       },
+      {
+        id: 'post_bird_kiwi',
+        ownerId: 'user_nabila',
+        ownerName: 'Nabila Chowdhury',
+        ownerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+        petId: 'pet_kiwi',
+        petName: 'Kiwi',
+        petBreed: 'Green Cheek Conure (Bird)',
+        petAvatar: '/pet_bird_avatar.jpg',
+        caption: 'Morning balcony concert from Dhanmondi! 🦜✨ Kiwi has officially learned how to mimic the electric kettle whistle AND our doorbell chime. Feathery companions bring 100% of the sassy attitude and endless colorful joy! 🍎🎶 #conure #birdlovers #featheredfriends #parrotsofinstagram #aviculture #dhakapets #diversity',
+        petDialogue: 'I am a majestic miniature dinosaur. Sing high C, receive sweet papaya. This is basic avian economics. 🦜🎶',
+        petMood: '🦜 Balcony Opera & Papaya Hunter',
+        petSoundBite: '🎵 Cheerful Conure Chirps & Whistles',
+        mediaUrls: [
+          '/pet_bird_kiwi.jpg',
+        ],
+        likesCount: 538,
+        commentsCount: 47,
+        isLiked: true,
+        selectedReaction: 'nuzzle',
+        reactions: { paw: 182, nuzzle: 215, treat: 96, ball: 18, purr: 27 },
+        isSaved: true,
+        createdAt: '3h ago',
+        location: 'Dhanmondi Lake View, Dhaka',
+        hashtags: ['conure', 'birdlovers', 'featheredfriends', 'parrotsofinstagram', 'dhakapets', 'diversity'],
+        comments: [
+          {
+            id: 'c_bird_1',
+            authorName: 'Alex Rivers',
+            authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+            body: 'Waffles tilts his head at a 90-degree angle every single time Kiwi hits those high whistle notes! What a vibrant little star 🦜❤️',
+            createdAt: '2h ago',
+            likesCount: 28,
+            isLiked: true,
+          },
+        ],
+      },
     ]);
   } catch (error: any) {
     console.error('API /api/posts GET error:', error);
